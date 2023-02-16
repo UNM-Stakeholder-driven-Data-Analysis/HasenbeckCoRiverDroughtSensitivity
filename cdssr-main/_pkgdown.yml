@@ -1,0 +1,6 @@
+url: https://anguswg-ucsb.github.io/cdssr/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    code-bg: "#e0e7ee"

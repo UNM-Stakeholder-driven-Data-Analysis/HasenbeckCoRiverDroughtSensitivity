@@ -4,10 +4,37 @@
 # CBT IDs: 5104634, 0404634
 #CBT Monthly Diversion data url: https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&min-dataMeasDate=01%2F1980&max-dataMeasDate=now&wdid=5104634&apiKey=SBsie9CimoXPeuGBzrzzkj4nJOmM4aYVrKIbw2xkPr0%3D
 
+
+#Fresh attempt using suggestions from Alex
+library(httr)
+res = GET("https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&wdid=0404634")
+
+CBTdata <- GET("https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&wdid=0404634")
+
+View(CBTdata)
+
+?res
+?httr
+
+> res
+Response [https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesraw/?format=csv&abbrev=PLAKERCO&parameter=DISCHRG]
+Date: 2023-02-16 17:26
+Status: 200
+Content-Type: text/csv; charset=utf-8
+Size: 248 kB
+
+
+
+
+
 #This seemes to get the closest, was generated using R studio import button using this url but it gives a 400 error. 
   # https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&min-dataMeasDate=01%2F1980&max-dataMeasDate=now&wdid=5104634&apiKey=SBsie9CimoXPeuGBzrzzkj4nJOmM4aYVrKIbw2xkPr0%3D
 library(readr)
 CBTdata <- read_csv("https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&min-dataMeasDate=01%2F1980&max-dataMeasDate=now&wdid=5104634&apiKey=SBsie9CimoXPeuGBzrzzkj4nJOmM4aYVrKIbw2xkPr0%3D")
+
+
+
+
 
 
 

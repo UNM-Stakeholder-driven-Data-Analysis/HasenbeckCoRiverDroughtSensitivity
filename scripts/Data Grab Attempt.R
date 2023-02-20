@@ -31,12 +31,14 @@ library(dplyr)
 library(tidyr)
 library(tidyverse)
 
+#Using tutorial from tidyverse 
+#https://tidyr.tidyverse.org/reference/separate.html
 
-AllWDIDdataClean <- AllWDIDdataParsableDF %>% 
+AllWDIDdataClean <-
   separate(
-    data(AllWDIDdataParsableDF),
-    col(ResultDateTime),
-    into("measInterval","measCount","dataMeasDate","dataValue","measUnits","obsCode","approvalStatus","modified"),
+    AllWDIDdataParsableDF,
+    c(ResultDateTime),
+    c("measInterval","measCount","dataMeasDate","dataValue","measUnits","obsCode","approvalStatus","modified"),
     sep = ",",
     remove = FALSE,
     convert = FALSE,

@@ -33,8 +33,10 @@ library(tidyverse)
 
 #Using tutorial from tidyverse 
 #https://tidyr.tidyverse.org/reference/separate.html
+#REMEMBER ELEANOR TO CHANGE TO ALLWDIDdataPARSABLE 
 
-AllWDIDdataClean <-
+AllWDIDdataClean <- 
+  #Seperating ResultDateTime column into appropriate columns
   separate(
     AllWDIDdataParsableDF,
     c(ResultDateTime),
@@ -45,7 +47,20 @@ AllWDIDdataClean <-
     extra = "warn",
     fill = "warn",
     )
+#Seperating resultcount into appropriate columna
+AllWDIDdataClean2 <-  separate(
+    AllWDIDdataClean,
+    c(ResultCount),
+    c("wcIdentifier","S:4","F:","U:Q","T:7","G:","To:"),
+    sep = " ",
+    remove = FALSE,
+    convert = FALSE,
+    extra = "warn",
+    fill = "warn",
+  )
+
+  
 
 View(AllWDIDdataParsableDF)
-View(AllWDIDdataClean)
+View(AllWDIDdataClean2)
 

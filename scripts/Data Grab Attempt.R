@@ -31,9 +31,12 @@ library(dplyr)
 library(tidyr)
 library(tidyverse)
 
-AllWDIDdataClean <- AllWDIDdataParsableDF %>%
-  mutate(ResultDateTime = strsplit(as.character(ResultDateTime), ",")) %>%
-  unnest(ResultDateTime)
+
+AllWDIDdataClean <- AllWDIDdataParsableDF %>% 
+  mutate(SeperatedResultDateTime = strsplit(ResultDateTime, ",")) %>% 
+  unnest(ResultDateTime) %>% 
+  pivot_wider(names_from = SeperatedResultDateTime)
+
 
 View(AllWDIDdataParsableDF)
 View(AllWDIDdataClean)

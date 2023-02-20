@@ -33,10 +33,16 @@ library(tidyverse)
 
 
 AllWDIDdataClean <- AllWDIDdataParsableDF %>% 
-  mutate(SeperatedResultDateTime = strsplit(ResultDateTime, ",")) %>% 
-  unnest(ResultDateTime) %>% 
-  pivot_wider(names_from = SeperatedResultDateTime)
-
+  separate(
+    data(AllWDIDdataParsableDF),
+    col(ResultDateTime),
+    into("measInterval","measCount","dataMeasDate","dataValue","measUnits","obsCode","approvalStatus","modified"),
+    sep = ",",
+    remove = FALSE,
+    convert = FALSE,
+    extra = "warn",
+    fill = "warn",
+    )
 
 View(AllWDIDdataParsableDF)
 View(AllWDIDdataClean)

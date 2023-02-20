@@ -7,11 +7,15 @@
 
 #Fresh attempt using suggestions from Alex
 library(httr)
-res = GET("https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&wdid=0404634")
-
 CBTdata <- GET("https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/divrecmonth/?format=csv&dateFormat=dateOnly&wdid=0404634")
 
-View(CBTdata)
+
+(CBTdata)
+
+
+
+
+
 
 ?res
 ?httr

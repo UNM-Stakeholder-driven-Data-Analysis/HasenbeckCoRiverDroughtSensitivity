@@ -6,10 +6,13 @@
 
 #The second part of this script converts an excel file of historic SWSI data which was shared with me via email on 02/22/2023 by Joel Atwood, a Joel Atwood a Hydrologist with the NRCS's Colorado Snow Survey 
 
-
-#### Pulling in 2010-present data from API####
+#libraries 
+library(tidyverse)
 library(dplyr)
 library(httr)
+library(readxl)
+
+#### Pulling in 2010-present data from API####
 SWSI2010tonow <- GET("https://data.colorado.gov/resource/gs59-iraj.csv")
 SWSI2010tonow = GET("https://data.colorado.gov/resource/gs59-iraj.csv") %>%
   httr::content("parsed")
@@ -18,9 +21,6 @@ SWSI2010tonow = GET("https://data.colorado.gov/resource/gs59-iraj.csv") %>%
 write.csv(SWSI2010tonow,"data/raw/SWSI2010tonow.csv")
 
 #### Converting 1981-2011 SWSI from Excel File to csv #### 
-#install and load readxl package
-install.packages('readxl')
-library(readxl)
 
 #import Excel file into R
 SWSI1981to2011 <- read_excel("data/processed/swsi_data_1981-2011-with-headers.xlsx", 
@@ -29,7 +29,10 @@ SWSI1981to2011 <- read_excel("data/processed/swsi_data_1981-2011-with-headers.xl
                              #import dates correctly
                              col_types = c("date", "numeric", "numeric","numeric","numeric","numeric","numeric","numeric"))
 
-###Writing to csv###
+###Writing raw data to csv###
 write.csv(SWSI1981to2011,"data/raw/SWSI1981to2011.csv")
 
-View(SWSI1981to2011)
+
+
+
+

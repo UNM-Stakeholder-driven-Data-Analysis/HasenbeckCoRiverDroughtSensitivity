@@ -21,9 +21,7 @@ SWSI2010tonowCLEAN <- SWSI2010tonow %>%
 SWSI2010tonowCLEAN <- SWSI2010tonow %>%
   select("basin","report_year","report_month","swsi") %>%
   pivot_wider(names_from = "basin", values_from = "swsi") %>%
-  as.yearmon(paste("report_year","report_month","%Y-%m"))
-df$Date <- as.yearmon(paste(df$year, df$month), "%Y,%m")
-  
+  unite(Date, report_year,report_month) 
   ?lubridate
   
   mutate("Date" = year * 100 + month)

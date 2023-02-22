@@ -26,5 +26,8 @@ library(readxl)
 SWSI1981to2011 <- read_excel("data/raw/swsi_data_1981-2011.xlsx")
 
 #Convert jumbled Excel dates to legible dates in R 
+SWSI1981to2011 <- read_excel("data/raw/swsi_data_1981-2011-with-headers.xlsx", col_names = TRUE, col_types = c("date", "numeric", "numeric","numeric","numeric","numeric","numeric","numeric"))
+
+?read_excel
 
 View(SWSI1981to2011)

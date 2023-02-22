@@ -13,4 +13,8 @@ SWSI2010tonow <- read.csv("data/raw/SWSI2010tonow.csv")
 ####Cleaning SWSI 2010 to now data####
 
 SWSI2010tonowCLEAN <- SWSI2010tonow %>%
-  S
+  select("basin","report_year","report_month","swsi")
+                                 
+View(SWSI2010tonowCLEAN)
+?select
+  

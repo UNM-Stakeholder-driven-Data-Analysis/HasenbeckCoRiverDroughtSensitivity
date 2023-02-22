@@ -23,11 +23,13 @@ install.packages('readxl')
 library(readxl)
 
 #import Excel file into R
-SWSI1981to2011 <- read_excel("data/raw/swsi_data_1981-2011.xlsx")
+SWSI1981to2011 <- read_excel("data/processed/swsi_data_1981-2011-with-headers.xlsx", 
+                             #top line are headers 
+                             col_names = TRUE, 
+                             #import dates correctly
+                             col_types = c("date", "numeric", "numeric","numeric","numeric","numeric","numeric","numeric"))
 
-#Convert jumbled Excel dates to legible dates in R 
-SWSI1981to2011 <- read_excel("data/processed/swsi_data_1981-2011-with-headers.xlsx", col_names = TRUE, col_types = c("date", "numeric", "numeric","numeric","numeric","numeric","numeric","numeric"))
-
-?read_excel
+###Writing to csv###
+write.csv(SWSI1981to2011,"data/raw/SWSI1981to2011.csv")
 
 View(SWSI1981to2011)

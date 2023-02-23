@@ -20,7 +20,23 @@ SWSI2010tonowCLEAN <- SWSI2010tonow %>%
   mutate(Date_Recorded = paste(report_year,report_month,"1", sep = "-")) %>%  #combine year and month columns into one date, add 01 as day
   select(!(report_year:report_month)) #remove year and month columns
 
-
+SWSIjoin <- full_join(SWSI1981to2011,
+           SWSI2010tonowCLEAN,
+          join_by = (
+            "Date" = "Date_Recorded" +
+            "Gunnison" = "Gunnison" +
+            "Colorado" ="Colorado" +
+            "Arkansas" = "Arkansas"+
+            "South.Platte" = "South Platte" +
+            "Yampa..White...N..Platte" = "Yampa-White" +
+            "Rio.Grande" = "Rio Grande" +
+            "San.Juan..Animas..Dolores...San.Miguel" = "San Juan-Dolores"+
+            keep = FALSE)
+)
+View(SWSIjoin)
+          
+          
+           
 View(SWSI2010tonowCLEAN)
     
     

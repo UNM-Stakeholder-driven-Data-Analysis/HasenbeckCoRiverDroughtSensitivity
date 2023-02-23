@@ -33,10 +33,23 @@ SWSIjoin <- full_join(SWSI1981to2011,
             "San.Juan..Animas..Dolores...San.Miguel" = "San Juan-Dolores"+
             keep = FALSE)
 )
-View(SWSIjoin)
           
-          
-           
-View(SWSI2010tonowCLEAN)
+       
+SWSI1981to2023 <- SWSIjoin  %>%
+  unite(Date, "Date","Date_Recorded", na.rm = TRUE) %>%
+  unite(Colorado, "Colorado", "Colorado", na.rm = TRUE) %>%
+  unite(Gunnison, "Gunnison", na.rm = TRUE) %>%
+  unite(Arkansas, "Arkansas", na.rm = TRUE) %>%
+  unite(South_Platte, "South Platte", "South.Platte", na.rm = TRUE) %>%
+  unite(Yampa_White_N_Platte, "Yampa..White...N..Platte", "Yampa-White", na.rm = TRUE) %>%
+  unite(Rio_Grande, "Rio.Grande", "Rio Grande", na.rm = TRUE) %>%
+  unite(San_Juan, "San.Juan..Animas..Dolores...San.Miguel", "San Juan-Dolores", na.rm = TRUE) %>% 
+  select(!X)
+
+#HAVE DUPLICATE VALUES FOR PERIOD IN 2011 
+    
+
+     
+  View(SWSI1981to2023)
     
     

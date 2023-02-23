@@ -6,7 +6,6 @@
 library(tidyverse)
 library(dplyr)
 library(lubridate)
-library(zoo)
 
 SWSI1981to2011 <- read.csv("data/raw/SWSI1981to2011.csv")
 SWSI2010tonow <- read.csv("data/raw/SWSI2010tonow.csv")
@@ -36,6 +35,7 @@ SWSIjoin <- full_join(SWSI1981to2011,
           
        
 SWSI1981to2023 <- SWSIjoin  %>%
+  #Merge columns
   unite(Date, "Date","Date_Recorded", na.rm = TRUE) %>%
   unite(Colorado, "Colorado", "Colorado", na.rm = TRUE) %>%
   unite(Gunnison, "Gunnison", na.rm = TRUE) %>%
@@ -44,11 +44,17 @@ SWSI1981to2023 <- SWSIjoin  %>%
   unite(Yampa_White_N_Platte, "Yampa..White...N..Platte", "Yampa-White", na.rm = TRUE) %>%
   unite(Rio_Grande, "Rio.Grande", "Rio Grande", na.rm = TRUE) %>%
   unite(San_Juan, "San.Juan..Animas..Dolores...San.Miguel", "San Juan-Dolores", na.rm = TRUE) %>% 
+  #remove un-needed X column 
   select(!X)
+  
+# doesn't work 
+SWSI1981to2023 <- as.Date.character(SWSI1981to2023$Date,format = "Y!-m!-d!")
+
+class(SWSI1981to2023$Date)
 
 #HAVE DUPLICATE VALUES FOR PERIOD IN 2011 
-    
-
+    ?as.Date.character
+?lubridate
      
   View(SWSI1981to2023)
     

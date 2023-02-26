@@ -65,5 +65,118 @@ str(SWSI1981to2023)
 
 #HAVE DUPLICATE VALUES FOR PERIOD IN 2011 
 
+
+####Data exploration ####
+
+#Pivot longer to complete data exploration: 
+SWSIdataexplore<- pivot_longer(SWSI1981to2023,
+             cols = Gunnison:San_Juan,
+            cols_vary = "fastest",
+            names_to = "basin",
+            values_to = "SWSI",
+            values_drop_na = FALSE)
+View(SWSIdataexplore)
+                    
+  names_from = "basin", values_from = "swsi") %>% #pivot to a wider table to match format of past data
+
+#### describe dataset size and structure ####
+
+head(SWSI1981to2023)
+#Date, single SWSI observation sorted by basin. 
+
+str(SWSI1981to2023)
+#parameters were converted to date and numerics. Value is the measure of the SWSI
+#Total observations: 510
+#Total number of variables: 8 (date,7 basins)
+
+with(dat, table(Parameter, Site_Name))
+
+
+
+
+
+### check timesteps by looking and time series of most frequently collected parameters
+# make dataset of one of the most frequently collected parameters
+dat_lts = 
+  dat %>% 
+  group_by(Parameter) %>% 
+  filter(n() > 500) %>% 
+  arrange(datetime_NM)
+dat_lts_alk = 
+  dat %>% 
+  filter(Parameter=="Alkalinity") %>% 
+  arrange(datetime_NM)
+# add year and day of year for plotting
+dat_lts_alk$year = lubridate::year(dat_lts_alk$datetime_NM)
+dat_lts_alk$doy = lubridate::yday(dat_lts_alk$datetime_NM)
+# plot
+ggplot(data=dat_lts_alk, aes(x=doy, y=Value, color=Site_Name))+
+  geom_point() + geom_path()+
+  facet_wrap(~year, scales="free_y")+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+# can also look at single years in detail
+ggplot(data=dat_lts_alk, aes(x=datetime_NM, y=Value, color=Site_Name))+
+  geom_point() + geom_path()+
+  xlim(c(as.POSIXct("1995-01-01"), as.POSIXct("1996-01-01")))+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+# timesteps are all over the place from year to year and site to site, what we would call "irregular"
+# timesteps are not sub-daily, at most frequent are approximately monthly
+
+# ........ etc. for each parameter I'm interested in using in analysis .........
+
+
+### How many variables are in your dataset?
+str(SWSI1981to2023)
+# 8 parameters. Date, seven basins 
+
+### How many observations are in your dataset?
+nrow(SWSI1981to2023)
+# 510 total
+
+### Are the data nested in time or space?
+# Yes in time - observations were collected repeatedly on an irregular schedule
+# Yes in space - observations were collected in three different sites, need more research/exploration to find out if sites are connected in any way
+
+#### describe data types ####
+
+str(dat)
+summary(dat$Parameter)
+# most water quality parameters are numerical continous ratios
+# temp, pH are numerical continous interval
+# I would need to research on how some of these other parameters were measured and what units they're in to decide whether they're ratio or interval - take time to do this for your dataset!
+
+#### check distributions ####
+
+# I'm only going to check the distributions of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+dat_r = 
+  dat %>% 
+  group_by(Parameter, Site_Name) %>% 
+  filter(n() > 100) %>% 
+  arrange(datetime_NM)
+summary(dat_r$Parameter)
+
+temp = dat_r[dat_r$Parameter == "Alkalinity",]
+qqPlot(temp$Value); shapiro.test(temp$Value) # normal
+qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
+qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
+qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-3']) # normal
+
+temp = dat_r[dat_r$Parameter == "Ammonia",]
+qqPlot(temp$Value); shapiro.test(temp$Value) # NOT normal
+qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
+qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # NOT normal
+qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-3']) # NOT normal
+
+temp = dat_r[dat_r$Parameter == "Bicarbonate",]
+qqPlot(temp$Value); shapiro.test(temp$Value) # normal
+qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
+qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
+qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
+
+# etc........ for the rest of the parameters that I think I'll use in this analysis
+
+
     
     

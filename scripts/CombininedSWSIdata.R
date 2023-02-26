@@ -162,32 +162,29 @@ summary(SWSIdataexplore$basin)
 #### check distributions ####
 
 # I'm only going to check the distributions of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
-dat_r = 
-  dat %>% 
-  group_by(Parameter, Site_Name) %>% 
-  filter(n() > 100) %>% 
-  arrange(datetime_NM)
-summary(dat_r$Parameter)
+SWSIdataexplore_r = 
+  SWSIdataexplore %>% 
+  group_by(basin, SWSI) %>% 
+  arrange(Date)
+summary(SWSIdataexplore_r$SWSI)
 
-temp = dat_r[dat_r$Parameter == "Alkalinity",]
-qqPlot(temp$Value); shapiro.test(temp$Value) # normal
-qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
-qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
-qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-3']) # normal
+#Summary
+#Min.     1st Qu.  Median Mean    3rd Qu.    Max.    NA's 
+# -4.100  -1.350   0.400   0.322   2.000   4.200       1 
 
-temp = dat_r[dat_r$Parameter == "Ammonia",]
-qqPlot(temp$Value); shapiro.test(temp$Value) # NOT normal
-qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
-qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # NOT normal
-qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-3']) # NOT normal
 
-temp = dat_r[dat_r$Parameter == "Bicarbonate",]
-qqPlot(temp$Value); shapiro.test(temp$Value) # normal
-qqPlot(temp$Value[temp$Site_Name=='VR-1']); shapiro.test(temp$Value[temp$Site_Name=='VR-1']) # no data
-qqPlot(temp$Value[temp$Site_Name=='VR-2']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
-qqPlot(temp$Value[temp$Site_Name=='VR-3']); shapiro.test(temp$Value[temp$Site_Name=='VR-2']) # normal
+temp = SWSIdataexplore_r
+qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
 
-# etc........ for the rest of the parameters that I think I'll use in this analysis
+qqPlot(temp$SWSI[temp$basin=="Colorado"]); shapiro.test(temp$SWSI[temp$basin=="Colorado"]) 
+#Shapiro-Wilk normality test Colorado 
+#data:  temp$SWSI[temp$basin == "Colorado"]
+#W = 0.97114, p-value = 1.774e-08
+
+qqPlot(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]); shapiro.test(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]) 
+#Shapiro-Wilk normality test Yampa
+#data:  temp$SWSI[temp$basin == "Yampa_White_N_Platte"]
+#W = 0.94996, p-value = 4.212e-12
 
 
     

@@ -150,16 +150,14 @@ range(with(SWSIdataexplore, table(SWSIdataexplore$Date, SWSIdataexplore$SWSI)))
 
 
 ### Are the data nested in time or space?
-# Yes in time - observations were collected repeatedly on an irregular schedule
-# Yes in space - observations were collected in three different sites, need more research/exploration to find out if sites are connected in any way
+# Yes in time - observations were collected repeatedly on a monthly schedule, with some data overlapping
+# Yes in space - observations were created for each basin. 
 
 #### describe data types ####
 
-str(dat)
-summary(dat$Parameter)
-# most water quality parameters are numerical continous ratios
-# temp, pH are numerical continous interval
-# I would need to research on how some of these other parameters were measured and what units they're in to decide whether they're ratio or interval - take time to do this for your dataset!
+str(SWSIdataexplore)
+summary(SWSIdataexplore$basin)
+# continuous intervals. 
 
 #### check distributions ####
 

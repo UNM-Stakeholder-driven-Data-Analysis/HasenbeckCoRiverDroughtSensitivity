@@ -46,7 +46,18 @@ SWSI1981to2023 <- SWSIjoin  %>%
   unite(San_Juan, "San.Juan..Animas..Dolores...San.Miguel", "San Juan-Dolores", na.rm = TRUE) %>% 
   #remove un-needed X column 
   select(!X)
-  
+
+#change data types 
+SWSI1981to2023$Date = as.Date(as.character(SWSI1981to2023$Date,format = "Y!-m!-d!")) #change date column to date 
+as.numeric(SWSI1981to2023$Gunnison)
+SWSI1981to2023$Colorado,SWSI1981to2023$South_Platte,SWSI1981to2023$Yampa_White_N_Platte, SWSI1981to2023$Arkansas, SWSI1981to2023$Rio_Grande) #change basin values to values 
+
+?as.factor
+
+str(SWSI1981to2023)
+
+
+###### This stuff is stuff that can be deleted, I think. 
 # doesn't work 
 SWSI1981to2023 <- as.Date.character(SWSI1981to2023$Date,format = "Y!-m!-d!")
 

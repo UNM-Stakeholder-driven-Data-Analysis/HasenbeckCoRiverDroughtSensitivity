@@ -69,25 +69,36 @@ str(SWSI1981to2023)
 ####Data exploration ####
 
 #Pivot longer to complete data exploration: 
-SWSIdataexplore<- pivot_longer(SWSI1981to2023,
+SWSIdataexplore <- pivot_longer(SWSI1981to2023,
              cols = Gunnison:San_Juan,
             cols_vary = "fastest",
             names_to = "basin",
             values_to = "SWSI",
             values_drop_na = FALSE)
+
+#tibble converted to df 
+
+SWSIdataexplore <- as.data.frame(SWSIdataexplore)
+  
+  
+
+#convert new column to factor 
+SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
+
+
+  
 View(SWSIdataexplore)
                     
-  names_from = "basin", values_from = "swsi") %>% #pivot to a wider table to match format of past data
-
 #### describe dataset size and structure ####
 
-head(SWSI1981to2023)
+head(SWSIdataexplore)
 #Date, single SWSI observation sorted by basin. 
 
-str(SWSI1981to2023)
-#parameters were converted to date and numerics. Value is the measure of the SWSI
-#Total observations: 510
-#Total number of variables: 8 (date,7 basins)
+str(SWSIdataexplore)
+#parameters were converted to date, numerics and factors. 
+#Value is the measure of the SWSI
+#Total observations: 3570
+#Total number of variables: 3 (date, basins, SWSI value)
 
 with(dat, table(Parameter, Site_Name))
 
@@ -128,12 +139,12 @@ ggplot(data=dat_lts_alk, aes(x=datetime_NM, y=Value, color=Site_Name))+
 
 
 ### How many variables are in your dataset?
-str(SWSI1981to2023)
-# 8 parameters. Date, seven basins 
+str(SWSIdataexplore)
+# 3: date, basin, SWSI
 
 ### How many observations are in your dataset?
-nrow(SWSI1981to2023)
-# 510 total
+nrow(SWSIdataexplore)
+#3570 total
 
 ### Are the data nested in time or space?
 # Yes in time - observations were collected repeatedly on an irregular schedule

@@ -108,24 +108,22 @@ with(dat, table(Parameter, Site_Name))
 
 ### check timesteps by looking and time series of most frequently collected parameters
 # make dataset of one of the most frequently collected parameters
-dat_lts = 
-  dat %>% 
-  group_by(Parameter) %>% 
-  filter(n() > 500) %>% 
-  arrange(datetime_NM)
-dat_lts_alk = 
-  dat %>% 
-  filter(Parameter=="Alkalinity") %>% 
-  arrange(datetime_NM)
+SWSI_lts = 
+  SWSIdataexplore %>% 
+  group_by(basin) %>% 
+  arrange(Date)
 # add year and day of year for plotting
-dat_lts_alk$year = lubridate::year(dat_lts_alk$datetime_NM)
-dat_lts_alk$doy = lubridate::yday(dat_lts_alk$datetime_NM)
+SWSI_lts$year = lubridate::year(SWSI_lts$Date)
+SWSI_lts$doy = lubridate::yday(SWSI_lts$Date)
 # plot
-ggplot(data=dat_lts_alk, aes(x=doy, y=Value, color=Site_Name))+
+ggplot(data=SWSI_lts, aes(x=doy, y=SWSI_lts$SWSI, color=basin))+
   geom_point() + geom_path()+
-  facet_wrap(~year, scales="free_y")+
+  facet_wrap(~year, scales= "fixed")+
+  scale_y_continuous(breaks = c(-4,-2,0,2,4), labels = c(-4,-2,0,2,4)) +
   theme(legend.title = element_blank()) +
   theme_bw()
+
+#2010 and 2011 have duplicate values that are different from eachother. 
 # can also look at single years in detail
 ggplot(data=dat_lts_alk, aes(x=datetime_NM, y=Value, color=Site_Name))+
   geom_point() + geom_path()+
@@ -145,6 +143,11 @@ str(SWSIdataexplore)
 ### How many observations are in your dataset?
 nrow(SWSIdataexplore)
 #3570 total
+
+with(SWSIdataexplore, table(SWSIdataexplore$SWSI, SWSIdataexplore$basin))
+#Not all basins experience extremes.
+range(with(SWSIdataexplore, table(SWSIdataexplore$Date, SWSIdataexplore$SWSI)))
+
 
 ### Are the data nested in time or space?
 # Yes in time - observations were collected repeatedly on an irregular schedule

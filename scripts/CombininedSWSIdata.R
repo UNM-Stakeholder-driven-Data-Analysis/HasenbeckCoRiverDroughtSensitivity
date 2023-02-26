@@ -19,6 +19,7 @@ SWSI2010tonowCLEAN <- SWSI2010tonow %>%
   mutate(Date_Recorded = paste(report_year,report_month,"1", sep = "-")) %>%  #combine year and month columns into one date, add 01 as day
   select(!(report_year:report_month)) #remove year and month columns
 
+#### Joining 2010 and 1981 datasets####
 SWSIjoin <- full_join(SWSI1981to2011,
            SWSI2010tonowCLEAN,
           join_by = (
@@ -33,7 +34,6 @@ SWSIjoin <- full_join(SWSI1981to2011,
             keep = FALSE)
 )
           
-       
 SWSI1981to2023 <- SWSIjoin  %>%
   #Merge columns
   unite(Date, "Date","Date_Recorded", na.rm = TRUE) %>%
@@ -47,7 +47,7 @@ SWSI1981to2023 <- SWSIjoin  %>%
   #remove un-needed X column 
   select(!X)
 
-####change data types ####
+###change data types ###
 #change dates to dates 
   SWSI1981to2023$Date = as.Date(as.character(SWSI1981to2023$Date,format = "Y!-m!-d!"))
 #change basin values to values 

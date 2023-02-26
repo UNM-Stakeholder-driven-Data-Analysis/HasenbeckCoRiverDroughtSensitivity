@@ -124,16 +124,16 @@ ggplot(data=SWSI_lts, aes(x=doy, y=SWSI_lts$SWSI, color=basin))+
   theme_bw()
 
 #2010 and 2011 have duplicate values that are different from eachother. 
-# can also look at single years in detail
-ggplot(data=dat_lts_alk, aes(x=datetime_NM, y=Value, color=Site_Name))+
-  geom_point() + geom_path()+
-  xlim(c(as.POSIXct("1995-01-01"), as.POSIXct("1996-01-01")))+
-  theme(legend.title = element_blank()) +
-  theme_bw()
-# timesteps are all over the place from year to year and site to site, what we would call "irregular"
+# timesteps are regular, monthly
 # timesteps are not sub-daily, at most frequent are approximately monthly
 
-# ........ etc. for each parameter I'm interested in using in analysis .........
+# can also look at single years in detail
+ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
+  geom_point() + geom_path()+
+  xlim(c(as.Date("2010-01-01"), as.Date("2012-04-01")))+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+#Some basins have similar duplicates, others are more different. 
 
 
 ### How many variables are in your dataset?

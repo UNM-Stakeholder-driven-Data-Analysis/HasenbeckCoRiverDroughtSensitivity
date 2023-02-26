@@ -47,26 +47,23 @@ SWSI1981to2023 <- SWSIjoin  %>%
   #remove un-needed X column 
   select(!X)
 
-#change data types 
-SWSI1981to2023$Date = as.Date(as.character(SWSI1981to2023$Date,format = "Y!-m!-d!")) #change date column to date 
-as.numeric(SWSI1981to2023$Gunnison)
-SWSI1981to2023$Colorado,SWSI1981to2023$South_Platte,SWSI1981to2023$Yampa_White_N_Platte, SWSI1981to2023$Arkansas, SWSI1981to2023$Rio_Grande) #change basin values to values 
+####change data types ####
+#change dates to dates 
+  SWSI1981to2023$Date = as.Date(as.character(SWSI1981to2023$Date,format = "Y!-m!-d!"))
+#change basin values to values 
+  SWSI1981to2023$Gunnison = as.numeric(SWSI1981to2023$Gunnison)
+  SWSI1981to2023$Colorado= as.numeric(SWSI1981to2023$Colorado)
+  SWSI1981to2023$South_Platte = as.numeric (SWSI1981to2023$South_Platte)
+  SWSI1981to2023$Yampa_White_N_Platte = as.numeric(SWSI1981to2023$Yampa_White_N_Platte) 
+  SWSI1981to2023$Arkansas = as.numeric(SWSI1981to2023$Arkansas)
+  SWSI1981to2023$Rio_Grande = as.numeric(SWSI1981to2023$Rio_Grande)  
+  SWSI1981to2023$San_Juan = as.numeric(SWSI1981to2023$San_Juan)
 
-?as.factor
 
 str(SWSI1981to2023)
 
 
-###### This stuff is stuff that can be deleted, I think. 
-# doesn't work 
-SWSI1981to2023 <- as.Date.character(SWSI1981to2023$Date,format = "Y!-m!-d!")
-
-class(SWSI1981to2023$Date)
-
 #HAVE DUPLICATE VALUES FOR PERIOD IN 2011 
-    ?as.Date.character
-?lubridate
-     
-  View(SWSI1981to2023)
+
     
     

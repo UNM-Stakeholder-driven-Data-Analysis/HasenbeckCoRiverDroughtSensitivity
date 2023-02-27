@@ -78,10 +78,12 @@ AllWDIDsimplified <- AllWDIDdataClean2  %>%
          "AFdiverted" = "dataValue",
          "ObservationCode" = "obsCode",
          "ApprovalStatus" = "approvalStatus", 
-         "DateModified" = "modified")
+         "DateModified" = "modified") %>%
+    AllWDIDsimplified[-c(1,2), ]
+
   
-  
-  
+  View(AllWDIDsimplified)
+
 #Scaling to arrange 
 #Function to normalize 
   function(x){(x-min(x))/(max(x)-min(x))}

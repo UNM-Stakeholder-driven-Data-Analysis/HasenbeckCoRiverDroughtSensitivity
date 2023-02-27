@@ -67,7 +67,7 @@ SWSI1981to2023 <- SWSIjoin  %>%
   SWSI1981to2023$Rio_Grande = as.numeric(SWSI1981to2023$Rio_Grande)  
   SWSI1981to2023$San_Juan = as.numeric(SWSI1981to2023$San_Juan)
 
-
+write_csv(SWSI1981to2023,"data/processed//SWSI1981to2023.csv")
 str(SWSI1981to2023)
 
 

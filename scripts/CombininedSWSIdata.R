@@ -168,8 +168,7 @@ summary(SWSIdataexplore$basin)
 
 #### check distributions ####
 
-# I'm only going to check the distributions of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
-SWSIdataexplore_r = 
+
   SWSIdataexplore %>% 
   group_by(basin, SWSI) %>% 
   arrange(Date)
@@ -179,6 +178,7 @@ summary(SWSIdataexplore_r$SWSI)
 #Min.     1st Qu.  Median Mean    3rd Qu.    Max.    NA's 
 # -4.100  -1.350   0.400   0.322   2.000   4.200       1 
 
+####None of the data is normal, but all follows a similar pattern. #### 
 
 temp = SWSIdataexplore_r
 qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal

@@ -63,8 +63,17 @@ AllWDIDdataClean2 <-  separate(
   )
 
 
-#Select only the relevant columns 
-AllWDIDdataClean2 = as.data.frame(AllWDIDdataClean2) 
+
+
+#Select only the relevant columns
+
+AllWDIDsimplified <- AllWDIDdataClean2  %>%
+  #remove un-needed columns 
+  select(!PageNumber,!PageCount,!wcidentifier, !S:4, !measInterval, !dataMeasDate, !dataValue, !measUnits, !obsCode, !approvalStatus, !modified) %>% 
+  rename(iris, petal_length = Petal.Length)
+
+
+
 
 View (AllWDIDdataClean2)
 #### 

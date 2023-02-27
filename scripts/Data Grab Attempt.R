@@ -1,4 +1,4 @@
-#### Reading in from API ####
+#### Option 1: Reading in from API - Takes a long time to run. ####
 
 # My api token for DWR is: SBsie9CimoXPeuGBzrzzkj4nJOmM4aYVrKIbw2xkPr0=
 
@@ -24,9 +24,11 @@ AllWDIDdataParsable = GET("https://dwr.state.co.us/Rest/GET/api/v2/structures/di
 
 write.csv(AllWDIDdataParsable,"data/raw/AllWDIDdataParsable.csv")
 
+#### Option 2: Run from CSV. Start here if not pulling from API. This runs from local csv ####
 AllWDIDdataParsableDF <- read.csv("data/processed/AllWDIDdataParsable.csv")
 
-#Cleaning up comma delineated DONT RUN YET
+#### Tidying up data #### 
+#Cleaning up comma delineated 
 library(dplyr)
 library(tidyr)
 library(tidyverse)
@@ -47,6 +49,7 @@ AllWDIDdataClean <-
     extra = "warn",
     fill = "warn",
     )
+
 #Seperating resultcount into appropriate columna
 AllWDIDdataClean2 <-  separate(
     AllWDIDdataClean,
@@ -60,53 +63,7 @@ AllWDIDdataClean2 <-  separate(
   )
 AllWDIDdataClean2 = as.data.frame(AllWDIDdataClean2) 
 
+View (AllWDIDdataClean2)
 #### 
-WDIDseperated <- AllWDIDdataClean2 %>% separate_longer_delim(data = AllWDIDdataClean2,
-                                                             cols = ResultDateTime, 
-                                                             delim = ",",
-                                                             ... = "",
-                                                             names = c("measInterval",
-                                                               "measCount","dataMeasDate",
-                                                               "dataValue","measUnits",
-                                                               "obsCode","approvalStatus",
-                                                               "modified"),
-                                                             names_sep = ",")
-write.csv(AllWDIDdataClean2,"data/processed//AllWDIDseperated.csv")
 
 
-WDIDseperated  <- read.csv("data/processed/AllWDIDdataParsable.csv")
-
-
-as.data.frame(WDIDseperated)
-
-
-View(WDIDseperated)
-                                      
-?seperate_longer_delim
-                                           
-                                           names = c("measInterval",
-                                           "measCount","dataMeasDate",
-                                           "dataValue","measUnits",
-                                           "obsCode","approvalStatus",
-                                           "modified"))
-View(AllWDIDdataClean2)
-
-AllWDIDSeperated <- AllWDIDdataClean2 %>%
-  separate_longer_delim(AllWDIDdataClean2, 
-                        cols = ResultDateCount, 
-                        delim = " " )
-View(AllWDIDSeperated)
-
-View(AllWDIDdataParsableDF)
-View(AllWDIDdataClean2)
-    wdid = c("0304604","7600600","7600572","4800573","304607","4800576","0304600",
-                                   "4800577","0304602","4704602","4704603","0304603","5104601","0304601",
-                                   "5101213","5101212","5104634","5104655","5101269","5101309","5101310",
-                                   "5104625","3600829","0704682","3604658","0704658","3604626","3604684","0800653",
-                                   "0804611","3604685","3604683","3604699","3604684","3604683","3604688",
-                                   "3704641","3704624","3704648","3704614","3704643","3804625","1104612",
-                                   "3804613","1104617","1104618","7900851","7900968","2600702","2000920",
-                                   "3104637","3104638","7804672","7804670","7804671","2904669","2904667",
-                                   "7704636","7704635","3004662","3004660","3004661","7204715","4004657,
-                                   4504657,5804684,5804686,5804630,4200541
-                          ),

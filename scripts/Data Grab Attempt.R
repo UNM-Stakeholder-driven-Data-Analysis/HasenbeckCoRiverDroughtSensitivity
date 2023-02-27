@@ -61,6 +61,9 @@ AllWDIDdataClean2 <-  separate(
     extra = "warn",
     fill = "warn",
   )
+
+
+#Select only the relevant columns 
 AllWDIDdataClean2 = as.data.frame(AllWDIDdataClean2) 
 
 View (AllWDIDdataClean2)

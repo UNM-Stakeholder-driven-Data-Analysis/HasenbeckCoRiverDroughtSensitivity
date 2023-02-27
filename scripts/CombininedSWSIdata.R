@@ -223,6 +223,13 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #W = 0.95845, p-value = 8.386e-11
 
 
+#### Making histogram
+
+hist(SWSIdataexplore_r$SWSI,
+     breaks = 9)
+
+
+
 ##### what happens if I log-transform it? #### NOTHING! 
 temp = SWSIdataexplore_r[SWSIdataexplore_r$SWSI == "Colorado",]
 qqPlot(log10(temp$SWSI)); shapiro.test(log10(temp$SWSI))

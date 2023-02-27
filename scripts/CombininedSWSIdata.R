@@ -228,6 +228,11 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 hist(SWSIdataexplore_r$SWSI,
      breaks = 9)
 
+#### Density function 
+plot(density(SWSIdataexplore_r$SWSI, na.rm = T))
+range(SWSIdataexplore_r$SWSI, na.rm = T)
+
+plot(density(temp$SWSI, na.rm = T))
 
 
 ##### what happens if I log-transform it? #### NOTHING! 

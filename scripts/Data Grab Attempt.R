@@ -69,13 +69,20 @@ AllWDIDdataClean2 <-  separate(
 
 AllWDIDsimplified <- AllWDIDdataClean2  %>%
   #remove un-needed columns 
-  select(!PageNumber,!PageCount,!wcidentifier, !S:4, !measInterval, !dataMeasDate, !dataValue, !measUnits, !obsCode, !approvalStatus, !modified) %>% 
-  rename(iris, petal_length = Petal.Length)
+  select("wcIdentifier", "S:4", "measInterval", "dataMeasDate", "dataValue", "obsCode", "approvalStatus", "modified")
+  #rename columns 
+  rename(AllWDIDsimplified, 
+         "WDID" = "wcIdentifier",
+         "S4" ="S:4", 
+         "MeasurementInterval" ="measInterval", 
+         "DateMeasured" = "dataMeasDate", 
+         "AFdiverted" = "dataValue",
+         "ObservationCode" = "obsCode",
+         "ApprovalStatus" = "approvalStatus", 
+         "DateModified" = "modified")
 
 
-
-
-View (AllWDIDdataClean2)
+View (AllWDIDsimplified)
 #### 
 
 

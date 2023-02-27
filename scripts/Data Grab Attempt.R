@@ -65,9 +65,11 @@ AllWDIDdataClean2 <-  separate(
 
 
 
+AllWDIDdataClean3 <- AllWDIDdataClean2[-c(1,2), ]
+
 #Select only the relevant columns
 
-AllWDIDsimplified <- AllWDIDdataClean2  %>%
+AllWDIDsimplified <- AllWDIDdataClean3  %>%
   #remove un-needed columns 
   select("wcIdentifier","measInterval", "dataMeasDate", "dataValue", "obsCode", "approvalStatus", "modified")
   #rename columns 
@@ -78,9 +80,8 @@ AllWDIDsimplified <- AllWDIDdataClean2  %>%
          "AFdiverted" = "dataValue",
          "ObservationCode" = "obsCode",
          "ApprovalStatus" = "approvalStatus", 
-         "DateModified" = "modified") %>%
-    AllWDIDsimplified[-c(1,2), ]
-
+         "DateModified" = "modified")
+  
   
   View(AllWDIDsimplified)
 

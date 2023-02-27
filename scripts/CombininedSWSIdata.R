@@ -106,9 +106,6 @@ str(SWSIdataexplore)
 #Total observations: 3570
 #Total number of variables: 3 (date, basins, SWSI value)
 
-with(dat, table(Parameter, Site_Name))
-
-
 
 
 
@@ -171,6 +168,8 @@ summary(SWSIdataexplore$basin)
   SWSIdataexplore %>% 
   group_by(basin, SWSI) %>% 
   arrange(Date)
+
+SWSIdataexplore_r <- SWSIdataexplore
 summary(SWSIdataexplore_r$SWSI)
 
 #Summary
@@ -183,10 +182,6 @@ summary(SWSIdataexplore_r$SWSI)
 temp = SWSIdataexplore_r
 qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
 
-qqPlot(temp$SWSI[temp$basin=="Colorado"]); shapiro.test(temp$SWSI[temp$basin=="Colorado"]) 
-#Shapiro-Wilk normality test Colorado 
-#data:  temp$SWSI[temp$basin == "Colorado"]
-#W = 0.97114, p-value = 1.774e-08
 
 qqPlot(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]); shapiro.test(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]) 
 #Shapiro-Wilk normality test Yampa
@@ -227,7 +222,8 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #### Making histogram ####
 
 hist(SWSIdataexplore_r$SWSI,
-     breaks = 9)
+     breaks = 1000
+    )
 
 #### Density function ####
 plot(density(SWSIdataexplore_r$SWSI, na.rm = T))

@@ -69,20 +69,31 @@ AllWDIDdataClean2 <-  separate(
 
 AllWDIDsimplified <- AllWDIDdataClean2  %>%
   #remove un-needed columns 
-  select("wcIdentifier", "S:4", "measInterval", "dataMeasDate", "dataValue", "obsCode", "approvalStatus", "modified")
+  select("wcIdentifier","measInterval", "dataMeasDate", "dataValue", "obsCode", "approvalStatus", "modified")
   #rename columns 
   rename(AllWDIDsimplified, 
-         "WDID" = "wcIdentifier",
-         "S4" ="S:4", 
+         "WDID" = "wcIdentifier", 
          "MeasurementInterval" ="measInterval", 
          "DateMeasured" = "dataMeasDate", 
          "AFdiverted" = "dataValue",
          "ObservationCode" = "obsCode",
          "ApprovalStatus" = "approvalStatus", 
          "DateModified" = "modified")
+  
+  
+  
+#Scaling to arrange 
+#Function to normalize 
+  function(x){(x-min(x))/(max(x)-min(x))}
+  
+  6
+  # normalize (scale to 1)
+  range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+  dat$var = range01(dat$var)
+  
+#that function scales between 0 and 1, so use the forum to see how to adjust between -4 and 4
 
+write_csv(AllWDIDsimplified,"data/processed/AllWDIDtidied.csv")
 
-View (AllWDIDsimplified)
-#### 
 
 

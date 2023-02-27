@@ -6,6 +6,15 @@
 library(tidyverse)
 library(dplyr)
 library(lubridate)
+library(psych) # to plot pair-wise correlations
+library(car) # I like their qq plot fxn
+library(tsibble) # useful for creating time series objects
+library(forecast) # I like their Acf fxn
+library(ape) # for spatial autocorrelation
+library(ade4)# for spatial autocorrelation
+library(rgdal) # for mapping
+
+
 
 SWSI1981to2011 <- read.csv("data/raw/SWSI1981to2011.csv")
 SWSI2010tonow <- read.csv("data/raw/SWSI2010tonow.csv")
@@ -86,8 +95,6 @@ SWSIdataexplore <- as.data.frame(SWSIdataexplore)
 SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 
 
-  
-View(SWSIdataexplore)
                     
 #### describe dataset size and structure ####
 
@@ -186,6 +193,32 @@ qqPlot(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]); shapiro.test(temp$SWSI[te
 #data:  temp$SWSI[temp$basin == "Yampa_White_N_Platte"]
 #W = 0.94996, p-value = 4.212e-12
 
+qqPlot(temp$SWSI[temp$basin=="Rio_Grande"]); shapiro.test(temp$SWSI[temp$basin=="Rio_Grande"]) 
+#Shapiro-Wilk normality test RG
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "Rio_Grande"]
+#W = 0.97476, p-value = 1.058e-07
 
-    
-    
+
+qqPlot(temp$SWSI[temp$basin=="Arkansas"]); shapiro.test(temp$SWSI[temp$basin=="Arkansas"]) 
+#[1] 275  32
+#Shapiro-Wilk normality test Arkansas
+#data:  temp$SWSI[temp$basin == "Arkansas"]
+#W = 0.97526, p-value = 1.364e-07
+
+qqPlot(temp$SWSI[temp$basin=="South_Platte"]); shapiro.test(temp$SWSI[temp$basin=="South_Platte"]) 
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "South_Platte"]
+#W = 0.9485, p-value = 2.513e-12
+
+qqPlot(temp$SWSI[temp$basin=="San_Juan"]); shapiro.test(temp$SWSI[temp$basin=="San_Juan"]) 
+#[1] 253 254
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "San_Juan"]
+#W = 0.97125, p-value = 1.872e-08
+
+qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="Gunnison"]) 
+#[1] 500 501
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "Gunnison"]
+#W = 0.95845, p-value = 8.386e-11

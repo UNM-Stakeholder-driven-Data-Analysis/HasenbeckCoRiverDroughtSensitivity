@@ -176,6 +176,7 @@ summary(SWSIdataexplore_r$SWSI)
 #Summary
 #Min.     1st Qu.  Median Mean    3rd Qu.    Max.    NA's 
 # -4.100  -1.350   0.400   0.322   2.000   4.200       1 
+#Skews positive. 
 
 ####None of the data is normal, but all follows a similar pattern. #### 
 
@@ -223,18 +224,20 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #W = 0.95845, p-value = 8.386e-11
 
 
-#### Making histogram
+#### Making histogram ####
 
 hist(SWSIdataexplore_r$SWSI,
      breaks = 9)
 
-#### Density function 
+#### Density function ####
 plot(density(SWSIdataexplore_r$SWSI, na.rm = T))
 range(SWSIdataexplore_r$SWSI, na.rm = T)
 
 plot(density(temp$SWSI, na.rm = T))
 
 
-##### what happens if I log-transform it? #### NOTHING! 
+##### what happens if I log-transform it? NOTHING!#### 
 temp = SWSIdataexplore_r[SWSIdataexplore_r$SWSI == "Colorado",]
 qqPlot(log10(temp$SWSI)); shapiro.test(log10(temp$SWSI))
+
+#### temporal autocorrelation ####

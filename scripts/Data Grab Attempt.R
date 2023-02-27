@@ -58,16 +58,42 @@ AllWDIDdataClean2 <-  separate(
     extra = "warn",
     fill = "warn",
   )
-AllWDIDdataClean2 = as.factor(AllWDIDdataClean2$ResultDateTime) 
+AllWDIDdataClean2 = as.data.frame(AllWDIDdataClean2) 
 
 #### 
-AllWDIDdataClean2 %>% separate_wider_delim(cols = ResultDateTime, 
-                                           delim = ",", 
+WDIDseperated <- AllWDIDdataClean2 %>% separate_longer_delim(data = AllWDIDdataClean2,
+                                                             cols = ResultDateTime, 
+                                                             delim = ",",
+                                                             ... = "",
+                                                             names = c("measInterval",
+                                                               "measCount","dataMeasDate",
+                                                               "dataValue","measUnits",
+                                                               "obsCode","approvalStatus",
+                                                               "modified"),
+                                                             names_sep = ",")
+
+
+separate_wider_delim(data = AllWDIDdataClean2
+  data,
+  cols,
+  delim,
+  ...,
+  names = NULL,
+  names_sep = NULL,
+  names_repair = "check_unique",
+  too_few = c("error", "debug", "align_start", "align_end"),
+  too_many = c("error", "debug", "drop", "merge"),
+  cols_remove = TRUE
+)
+                                      
+?seperate_longer_delim
+                                           
                                            names = c("measInterval",
                                            "measCount","dataMeasDate",
                                            "dataValue","measUnits",
                                            "obsCode","approvalStatus",
                                            "modified"))
+View(AllWDIDdataClean2)
 
 AllWDIDSeperated <- AllWDIDdataClean2 %>%
   separate_longer_delim(AllWDIDdataClean2, 

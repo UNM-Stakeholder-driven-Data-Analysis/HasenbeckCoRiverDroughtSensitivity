@@ -19,7 +19,6 @@ library(rgdal) # for mapping
 SWSI1981to2011 <- read.csv("data/raw/SWSI1981to2011.csv")
 SWSI2010tonow <- read.csv("data/raw/SWSI2010tonow.csv")
 
-
 ####Cleaning SWSI 2010 to now data####
   
 SWSI2010tonowCLEAN <- SWSI2010tonow %>%
@@ -222,3 +221,8 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #Shapiro-Wilk normality test
 #data:  temp$SWSI[temp$basin == "Gunnison"]
 #W = 0.95845, p-value = 8.386e-11
+
+
+##### what happens if I log-transform it? #### NOTHING! 
+temp = SWSIdataexplore_r[SWSIdataexplore_r$SWSI == "Colorado",]
+qqPlot(log10(temp$SWSI)); shapiro.test(log10(temp$SWSI))

@@ -71,20 +71,16 @@ WDIDseperated <- AllWDIDdataClean2 %>% separate_longer_delim(data = AllWDIDdataC
                                                                "obsCode","approvalStatus",
                                                                "modified"),
                                                              names_sep = ",")
+write.csv(AllWDIDdataClean2,"data/processed//AllWDIDseperated.csv")
 
 
-separate_wider_delim(data = AllWDIDdataClean2
-  data,
-  cols,
-  delim,
-  ...,
-  names = NULL,
-  names_sep = NULL,
-  names_repair = "check_unique",
-  too_few = c("error", "debug", "align_start", "align_end"),
-  too_many = c("error", "debug", "drop", "merge"),
-  cols_remove = TRUE
-)
+WDIDseperated  <- read.csv("data/processed/AllWDIDdataParsable.csv")
+
+
+as.data.frame(WDIDseperated)
+
+
+View(WDIDseperated)
                                       
 ?seperate_longer_delim
                                            

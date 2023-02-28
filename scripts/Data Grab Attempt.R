@@ -82,8 +82,19 @@ AllWDIDsimplified <- AllWDIDdataClean3  %>%
          "ObservationCode" = "obsCode",
          "ApprovalStatus" = "approvalStatus", 
          "DateModified" = "modified")
-  
-  
+
+  #Renaming categories based on metadata
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "*"] <- "obs"   #amt observed in person
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "U"] <- "unk-user" # user supplied unk reliability 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "K"] <- "k-user" #user supplied known reliability
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "k"] <- "k-user" #user supplied known reliability 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "R"] <- "obs"   #amount recorded by device
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "S"] <- "estimate"   #amount estimated in person 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "E"] <- "estimate"   #date and amount estimated 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "C"] <- "calculated" #formula 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "M"] <- "modeled"   # model
+
+
   View(AllWDIDsimplified)
 
 #Scaling to arrange 

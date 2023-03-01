@@ -76,8 +76,9 @@ str(SWSI1981to2023)
 
 ####Data exploration ####
 
+SWSI1981to2023dataexplore <- read_csv("data/processed//SWSI1981to2023.csv")
 #Pivot longer to complete data exploration: 
-SWSIdataexplore <- pivot_longer(SWSI1981to2023,
+SWSIdataexplore <- pivot_longer(SWSI1981to2023dataexplore,
              cols = Gunnison:San_Juan,
             cols_vary = "fastest",
             names_to = "basin",
@@ -236,4 +237,218 @@ plot(density(temp$SWSI, na.rm = T))
 temp = SWSIdataexplore_r[SWSIdataexplore_r$SWSI == "Colorado",]
 qqPlot(log10(temp$SWSI)); shapiro.test(log10(temp$SWSI))
 
+
+#### Normalizing SWSI values #### 
+
+#Code from Alex: 
+https://stats.stackexchange.com/questions/281162/scale-a-number-between-a-range
+function(x){(x-min(x))/(max(4-min(-4))}
+9h24
+that function scales between 0 and 1, so use the forum to see how to adjust between -4 and 4
+Novo
+9h26
+# normalize (scale to 1)
+SWSInorm = SWSIdataexplore
+min_max_norm <- function(x){(x - min(x)) / (max(x) - min(x))}
+SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_norm))
+
+View (SWSInorm)
+
+####
+
 #### temporal autocorrelation ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  dat_r %>%
+  mutate(yr = lubridate::year(datetime_NM)) %>%
+  mutate(mo = lubridate::month(datetime_NM)) %>%
+  dplyr::select(Site_Name, Parameter, yr, mo, Value) %>%
+  group_by(Site_Name, Parameter, yr, mo) %>%
+  summarise(Value.mn = mean(Value, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+
+#### Alkalinity in VR-2
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$Parameter == "Alkalinity" & dat_monthly$Site_Name=="VR-2" ,]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1979, 10)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+
+
+#### Alkalinity in VR-3
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$Parameter == "Alkalinity" & dat_monthly$Site_Name=="VR-3" ,]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1983, 1)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details).
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp) 
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+
+
+# ....... ect. for each parameter and site combination I might include in the analysis .......
+
+
+
+#### check for spatial autocorrelation ####
+
+# I'm interested in spatial and not temporal autocorrelation, so I am going to look at just a few observations across all sites
+
+# reload and format data with all sites
+dat_all = read.csv("Week 5/coal_WQ.csv")
+dat_all$datetime_NM = as.POSIXct(dat_all$Sample_DateTime, format="%m/%d/%y %H:%M", tz="MST")
+dat_all$Parameter = as.factor(dat_all$Parameter)
+dat_all$Site_Name = as.factor(dat_all$Site_Name)
+dat_all$Is_Nondetect = as.factor(dat_all$Is_Nondetect)
+dat_all$Value = as.numeric(dat_all$Value)
+# how many sites are there?
+length(unique(dat_all$Site_Name))
+# 1288
+
+# what parameters were collected across all sites in June 1995?
+dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
+                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
+tb = as.data.frame( with(dat_june1995, table(Site_Name, Parameter)) )
+tb = tb[tb$Freq>0,]
+tb2 = tb %>% group_by(Parameter) %>% summarise(n = n()) %>% arrange(desc(n))
+head(tb2, 15)
+#   parameter          # of sites it was collected at in June 1995
+# 1 Bicarbonate        82
+# 2 Calcium            82
+# 3 Chloride           82
+# 4 LabpH              82
+# 5 LabTDS             82
+# 6 Magnesium          82
+# 7 Potassium          82
+# 8 Sodium             82
+# 9 Sulfate            82
+# ^ these are good options for testing for spatial autocorrelation
+
+### Bicarbonate in June 1995
+dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
+                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
+temp = dat_june1995 %>%  filter(Parameter=="Bicarbonate")
+# randomly generate lat/lon for demo
+set.seed(42)
+temp$lat = runif(nrow(temp),35.090956,35.634117)
+temp$lon = runif(nrow(temp),-107.65829,-106.65829)
+## Moran.I
+# generate an inverse distance matrix 
+dists = as.matrix(dist(cbind(temp$lon, temp$lat)))
+dists.inv = 1/dists
+diag(dists.inv) = 0
+# calculate Moran.I
+Moran.I(temp$Value, dists.inv)
+# we can NOT reject the null hypothesis that there is zero spatial autocorrelation present. In other words, there doesn't seem to be a lot of spatial autocorrelation. 
+## Mantel test
+# generate spatial distance matrix
+site_dists = dist(cbind(temp$lon, temp$lat))
+# generate response distance matrix 
+resp_dists = dist(temp$Value)
+# run Mantel test
+mantel.rtest(site_dists, resp_dists, nrepet = 9999)
+# 'observation' is the correlation between the distance matrices
+# p value suggests that they are NOT correlated
+# So, based on this test, there is no detectable correlation
+## Map
+proj = CRS("+proj=longlat +datum=WGS84")
+temp_spatial  <- SpatialPointsDataFrame(coords= cbind(temp$lon, temp$lat),
+                                        data = as.data.frame(cbind(temp$Site_Name, temp$Value)),
+                                        proj4string = proj)
+plot(temp_spatial)
+
+# ect.......... for other parameters of interest and for a few other time points, depending on how your data is structured ...........
+
+#
+#### check correlation between variables ####
+
+# first, returning to the dataset of just 3 sites and more than 100 obs per parameter (dat_r), reformat data to make it wider, such that parameters get their own columns. 
+
+dat_r_long = dat_r %>% 
+  select(c(Site_Name, datetime_NM, Parameter, Value))%>%
+  group_by(Site_Name, datetime_NM, Parameter) %>%
+  summarise(Value = mean(Value, na.rm = T)) %>%
+  pivot_wider(names_from = Parameter, 
+              values_from = Value,
+              values_fill = list(Value = NA))
+
+# reduce data down to one site - VR-2
+temp = dat_r_long %>% filter(Site_Name=="VR-2") 
+# plot correlations (of data columns only)
+pairs.panels(temp[,3:24], scale=T)
+pairs.panels(temp[,3:24], scale=F)
+# make table of correlations (I am rounding and replacing low values with text so that it is easier to see results)
+tab = round(as.data.frame(cor(cov(temp[,3:24], use="na.or.complete"))), 2)
+tab[abs(tab)<0.4] = "no_corr"
+
+# reduce data down to one site - VR-3
+temp = dat_r_long %>% filter(Site_Name=="VR-3")
+# plot correlations (of data columns only)
+pairs.panels(temp[,3:24], scale=T)
+pairs.panels(temp[,3:24], scale=F)
+# make table of correlations (I am rounding and replacing low values with text so that it is easier to see results)
+tab = round(as.data.frame(cor(cov(temp[,3:24], use="na.or.complete"))), 2)
+tab[abs(tab)<0.4] = "no_corr"
+
+
+

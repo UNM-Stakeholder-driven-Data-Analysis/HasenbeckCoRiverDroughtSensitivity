@@ -127,6 +127,23 @@ ggplot(data=SWSI_lts, aes(x=doy, y=SWSI_lts$SWSI, color=basin))+
   theme(legend.title = element_blank()) +
   theme_bw()
 
+
+# For scaled parameters 2010-2011 only 
+SWSI_ltsnorm = 
+  SWSInorm %>% 
+  group_by(basin) %>% 
+  arrange(Date)
+# add year and day of year for plotting
+SWSI_ltsnorm$year = lubridate::year(SWSI_lts$Date)
+SWSI_ltsnorm$doy = lubridate::yday(SWSI_lts$Date)
+# plot
+ggplot(data=SWSI_ltsnorm, aes(x=Date, y=SWSI, color=basin))+
+  geom_point() + geom_path()+
+  xlim(c(as.Date("2010-01-01"), as.Date("2012-04-01")))+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+
+
 #2010 and 2011 have duplicate values that are different from eachother. 
 # timesteps are regular, monthly
 # timesteps are not sub-daily, at most frequent are approximately monthly
@@ -442,12 +459,12 @@ dat_r_long = SWSIdataexplore %>%
 
 # reduce data down to Colorado
 temp = dat_r_long %>% 
-  select(col = Colorado) 
-# plot correlations (of data columns only)
-pairs.panels(temp[,3:24], scale=T)
-pairs.panels(temp[,3:24], scale=F)
+  select(Colorado = Colorado) 
+
+temp$Colorado = as.double(unlist(temp$Colorado))
+view(temp)
 # make table of correlations (I am rounding and replacing low values with text so that it is easier to see results)
-tab = round(as.data.frame(cor(cov(temp[,3:24], use="na.or.complete"))), 2)
+tab = round(as.data.frame(cor(cov(temp[,2], use="na.or.complete"))), 2)
 tab[abs(tab)<0.4] = "no_corr"
 
 # reduce data down to one site - VR-3

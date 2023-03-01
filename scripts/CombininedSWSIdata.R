@@ -95,7 +95,7 @@ SWSIdataexplore <- as.data.frame(SWSIdataexplore)
 #convert new column to factor 
 SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 
-
+write_csv(SWSIdataexplore,"data/processed/SWSIdataexplore.csv")
 #### describe dataset size and structure ####
 
 head(SWSIdataexplore)
@@ -248,12 +248,15 @@ that function scales between 0 and 1, so use the forum to see how to adjust betw
 Novo
 9h26
 # normalize (scale to 1)
+
+SWSIdataexplore <- read_csv("data/processed/SWSIdataexplore.csv") 
+
 SWSIdataexplore$SWSI = as.double(SWSIdataexplore$SWSI)
 SWSInorm = SWSIdataexplore
-function(x){(x-min(x))/(max(x)-min(x))}
-min_max <- function(x){(min(x)) / (max(x) - min(x))}
-min_max_4_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)}
-SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_4_norm))
+
+min_max <- function(x){(min(x)) / (max(x) - min(x))} #function to normalize to 1 
+min_max_4_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)} #function to normalize -4 to 4 
+SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_4_norm)) 
 
 View (SWSInorm)
 
@@ -326,15 +329,17 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 # I'm interested in spatial and not temporal autocorrelation, so I am going to look at just a few observations across all sites
 
 # reload and format data with all sites
-dat_all = read.csv("Week 5/coal_WQ.csv")
-dat_all$datetime_NM = as.POSIXct(dat_all$Sample_DateTime, format="%m/%d/%y %H:%M", tz="MST")
-dat_all$Parameter = as.factor(dat_all$Parameter)
-dat_all$Site_Name = as.factor(dat_all$Site_Name)
-dat_all$Is_Nondetect = as.factor(dat_all$Is_Nondetect)
-dat_all$Value = as.numeric(dat_all$Value)
-# how many sites are there?
-length(unique(dat_all$Site_Name))
-# 1288
+dat_all = SWSIdataexplore
+#remove duplicates
+SWSIdataexplore[!duplicated(SWSIdataexplore$SWSI), ]
+
+dat_all$Date = as.POSIXct(dat_all$Date,format="%m-%d-%y")
+dat_all$SWSI = as.numeric(dat_all$SWSI)
+dat_all$basin = as.factor(dat_all$basin)
+
+# how many sites are there? ####
+length(unique(dat_all$basin))
+# 7 basins 
 
 # what parameters were collected across all sites in June 1995?
 dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &

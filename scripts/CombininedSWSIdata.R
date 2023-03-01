@@ -248,10 +248,12 @@ that function scales between 0 and 1, so use the forum to see how to adjust betw
 Novo
 9h26
 # normalize (scale to 1)
+SWSIdataexplore$SWSI = as.double(SWSIdataexplore$SWSI)
 SWSInorm = SWSIdataexplore
-min_max_norm <- function(x){(min(x)) / (max(x) - min(x))}
-min_max_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)}
-SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_norm))
+function(x){(x-min(x))/(max(x)-min(x))}
+min_max <- function(x){(min(x)) / (max(x) - min(x))}
+min_max_4_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)}
+SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_4_norm))
 
 View (SWSInorm)
 

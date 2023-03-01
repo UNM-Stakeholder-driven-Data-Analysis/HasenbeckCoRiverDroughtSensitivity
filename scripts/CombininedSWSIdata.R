@@ -1,6 +1,6 @@
 ####Read me #### 
 
-#This script first cleans and then combines two SWSI datasets.
+#This script first cleans and then combines two SWSI datasets. Then it completes some data exploration tasks 
 
 #libraries 
 library(tidyverse)
@@ -247,7 +247,7 @@ function(x){(x-min(x))/(max(4-min(-4))}
 that function scales between 0 and 1, so use the forum to see how to adjust between -4 and 4
 Novo
 9h26
-# normalize (scale to 1)
+
 
 SWSIdataexplore <- read_csv("data/processed/SWSIdataexplore.csv") 
 

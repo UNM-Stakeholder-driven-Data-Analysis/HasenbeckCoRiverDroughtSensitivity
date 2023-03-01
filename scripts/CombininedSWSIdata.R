@@ -180,6 +180,7 @@ summary(SWSIdataexplore_r$SWSI)
 
 ####None of the data is normal, but all follows a similar pattern. #### 
 
+####distributions without normalization####
 temp = SWSIdataexplore_r
 qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
 
@@ -220,12 +221,55 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #W = 0.95845, p-value = 8.386e-11
 
 
-#### Making histogram ####
+####distributions with normalization####
+temp = SWSInorm
+qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
+View(temp)
 
+qqPlot(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]); shapiro.test(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]) 
+#Shapiro-Wilk normality test Yampa
+#data:  temp$SWSI[temp$basin == "Yampa_White_N_Platte"]
+#W = 0.94996, p-value = 4.212e-12
+
+qqPlot(temp$SWSI[temp$basin=="Rio_Grande"]); shapiro.test(temp$SWSI[temp$basin=="Rio_Grande"]) 
+#Shapiro-Wilk normality test RG
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "Rio_Grande"]
+#W = 0.97476, p-value = 1.058e-07
+
+
+qqPlot(temp$SWSI[temp$basin=="Arkansas"]); shapiro.test(temp$SWSI[temp$basin=="Arkansas"]) 
+#[1] 275  32
+#Shapiro-Wilk normality test Arkansas
+#data:  temp$SWSI[temp$basin == "Arkansas"]
+#W = 0.97526, p-value = 1.364e-07
+
+qqPlot(temp$SWSI[temp$basin=="South_Platte"]); shapiro.test(temp$SWSI[temp$basin=="South_Platte"]) 
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "South_Platte"]
+#W = 0.9485, p-value = 2.513e-12
+
+qqPlot(temp$SWSI[temp$basin=="San_Juan"]); shapiro.test(temp$SWSI[temp$basin=="San_Juan"]) 
+#[1] 253 254
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "San_Juan"]
+#W = 0.97125, p-value = 1.872e-08
+
+qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="Gunnison"]) 
+#[1] 500 501
+#Shapiro-Wilk normality test
+#data:  temp$SWSI[temp$basin == "Gunnison"]
+#W = 0.95845, p-value = 8.386e-11
+
+#### Making histogram ####
+#non-normalized data 
 hist(SWSIdataexplore_r$SWSI,
      breaks = 1000
     )
-
+#normalized data 
+hist(SWSInorm$SWSI,
+     breaks = 50
+)
 #### Density function ####
 plot(density(SWSIdataexplore_r$SWSI, na.rm = T))
 range(SWSIdataexplore_r$SWSI, na.rm = T)
@@ -240,28 +284,15 @@ qqPlot(log10(temp$SWSI)); shapiro.test(log10(temp$SWSI))
 
 #### Normalizing SWSI values #### 
 
-#Code from Alex: 
-https://stats.stackexchange.com/questions/281162/scale-a-number-between-a-range
-function(x){(x-min(x))/(max(4-min(-4))}
-9h24
-that function scales between 0 and 1, so use the forum to see how to adjust between -4 and 4
-Novo
-9h26
-
-
-SWSIdataexplore$SWSI = as.vector(SWSIdataexplore$SWSI)
+#Prep
+SWSIdataexplore$SWSI = as.vector(SWSIdataexplore$SWSI) #tidying it up. I dont know if this is necessary.
 SWSInorm = SWSIdataexplore
 
-min_max <- function(x){(min(x)) / (max(x) - min(x))} #function to normalize to 1 
-min_max_4_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)} #function to normalize -4 to 4 
-SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_4_norm)) 
-
-View (SWSInorm)
-
+#Norming function: 
 library(scales)
 SWSInorm$SWSI = rescale(SWSInorm$SWSI, 
                         to = c(-4,4))
-class(SWSI)
+
 ####
 
 #### temporal autocorrelation ####
@@ -344,11 +375,11 @@ length(unique(dat_all$basin))
 # 7 basins 
 
 # what parameters were collected across all sites in June 1995?
-dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
-                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
-tb = as.data.frame( with(dat_june1995, table(Site_Name, Parameter)) )
+dat_june2002 = dat_all[dat_all$Date >= as.POSIXct("2002-06-01") &
+                         dat_all$Date < as.POSIXct("2002-07-01"),]
+tb = as.data.frame( with(dat_june2002, table(basin, SWSI)) )
 tb = tb[tb$Freq>0,]
-tb2 = tb %>% group_by(Parameter) %>% summarise(n = n()) %>% arrange(desc(n))
+tb2 = tb %>% group_by(basin) %>% summarise(n = n()) %>% arrange(desc(n))
 head(tb2, 15)
 #   parameter          # of sites it was collected at in June 1995
 # 1 Bicarbonate        82
@@ -362,10 +393,10 @@ head(tb2, 15)
 # 9 Sulfate            82
 # ^ these are good options for testing for spatial autocorrelation
 
-### Bicarbonate in June 1995
-dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
-                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
-temp = dat_june1995 %>%  filter(Parameter=="Bicarbonate")
+### June 2002 SWSI Colorado
+dat_june2002 = dat_all[dat_all$Date >= as.POSIXct("2002-06-01") &
+                         dat_all$Date < as.POSIXct("2002-07-01"),]
+temp = dat_june2002 %>%  filter(basin=="Colorado")
 # randomly generate lat/lon for demo
 set.seed(42)
 temp$lat = runif(nrow(temp),35.090956,35.634117)
@@ -402,16 +433,16 @@ plot(temp_spatial)
 
 # first, returning to the dataset of just 3 sites and more than 100 obs per parameter (dat_r), reformat data to make it wider, such that parameters get their own columns. 
 
-dat_r_long = dat_r %>% 
-  select(c(Site_Name, datetime_NM, Parameter, Value))%>%
-  group_by(Site_Name, datetime_NM, Parameter) %>%
-  summarise(Value = mean(Value, na.rm = T)) %>%
-  pivot_wider(names_from = Parameter, 
-              values_from = Value,
+dat_r_long = SWSIdataexplore %>% 
+  select(c(basin, Date, SWSI))%>%
+  group_by(basin, Date, SWSI) %>%
+  pivot_wider(names_from = basin, 
+              values_from = SWSI,
               values_fill = list(Value = NA))
 
-# reduce data down to one site - VR-2
-temp = dat_r_long %>% filter(Site_Name=="VR-2") 
+# reduce data down to Colorado
+temp = dat_r_long %>% 
+  select(col = Colorado) 
 # plot correlations (of data columns only)
 pairs.panels(temp[,3:24], scale=T)
 pairs.panels(temp[,3:24], scale=F)

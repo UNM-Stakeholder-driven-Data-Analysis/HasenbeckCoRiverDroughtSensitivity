@@ -249,9 +249,7 @@ Novo
 9h26
 
 
-SWSIdataexplore <- read_csv("data/processed/SWSIdataexplore.csv") 
-
-SWSIdataexplore$SWSI = as.double(SWSIdataexplore$SWSI)
+SWSIdataexplore$SWSI = as.vector(SWSIdataexplore$SWSI)
 SWSInorm = SWSIdataexplore
 
 min_max <- function(x){(min(x)) / (max(x) - min(x))} #function to normalize to 1 
@@ -260,6 +258,10 @@ SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_4_norm))
 
 View (SWSInorm)
 
+library(scales)
+SWSInorm$SWSI = rescale(SWSInorm$SWSI, 
+                        to = c(-4,4))
+class(SWSI)
 ####
 
 #### temporal autocorrelation ####

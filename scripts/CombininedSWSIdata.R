@@ -74,7 +74,8 @@ str(SWSI1981to2023)
 #HAVE DUPLICATE VALUES FOR PERIOD IN 2011 
 
 
-####Data exploration ####
+
+#### Run this to get data for data exploration and normalization ####
 
 SWSI1981to2023dataexplore <- read_csv("data/processed/SWSI1981to2023.csv")
 #Pivot longer to complete data exploration: 
@@ -95,7 +96,6 @@ SWSIdataexplore <- as.data.frame(SWSIdataexplore)
 SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 
 
-                    
 #### describe dataset size and structure ####
 
 head(SWSIdataexplore)
@@ -270,86 +270,54 @@ SWSItemporal_r =
 # To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
 # I will start by averaging observations within the same month:
 dat_monthly = 
-  dat_r %>%
-  mutate(yr = lubridate::year(datetime_NM)) %>%
-  mutate(mo = lubridate::month(datetime_NM)) %>%
-  dplyr::select(Site_Name, Parameter, yr, mo, Value) %>%
-  group_by(Site_Name, Parameter, yr, mo) %>%
-  summarise(Value.mn = mean(Value, na.rm = T)) %>%
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
   mutate(date = paste(yr, mo, "15", sep="-")) %>%
   mutate(date = as.Date(date))
 
-
-#### Alkalinity in VR-2
 ### subset data to be one site and one parameter
-temp = dat_monthly[dat_monthly$Parameter == "Alkalinity" & dat_monthly$Site_Name=="VR-2" ,]
+temp = dat_monthly[dat_monthly$basin == "Colorado",]
+
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
 ## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
 temp_ts =
-  temp %>% 
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
   complete(date = seq(min(date), max(date), by = "1 month"), 
            fill = list(value = NA)) %>%
   as_tsibble(index = date)
+
+
 ## finally, convert to a ts object
 # a ts object is a vector of data taken sequentially through time. Required arguments are:
 # - the data vector
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1979, 10)) 
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 ### now we're ready to check for temporal autocorrelation in this ts!
 # I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
-forecast::Acf(temp_ts, na.action = na.pass) 
-forecast::Acf(temp_ts, na.action = na.contiguous) 
-forecast::Acf(temp_ts, na.action = na.interp)
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
 
 forecast::Pacf(temp_ts, na.action = na.pass)
 forecast::Pacf(temp_ts, na.action = na.contiguous)
 forecast::Pacf(temp_ts, na.action = na.interp)
 
-# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
-# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
-
-
-#### Alkalinity in VR-3
-### subset data to be one site and one parameter
-temp = dat_monthly[dat_monthly$Parameter == "Alkalinity" & dat_monthly$Site_Name=="VR-3" ,]
-### make this a time series object
-## first, make doubly sure that the data is arranged by time before converting to ts object!
-temp = temp %>% arrange(date) 
-## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
-temp_ts =
-  temp %>% 
-  complete(date = seq(min(date), max(date), by = "1 month"), 
-           fill = list(value = NA)) %>%
-  as_tsibble(index = date)
-## finally, convert to a ts object
-# a ts object is a vector of data taken sequentially through time. Required arguments are:
-# - the data vector
-# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
-# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
-head (temp_ts)
-temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1983, 1)) 
-# check that you specified the ts correctly
-print(temp_ts, calendar = T) 
-### now we're ready to check for temporal autocorrelation in this ts!
-# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details).
-forecast::Acf(temp_ts, na.action = na.pass) 
-forecast::Acf(temp_ts, na.action = na.contiguous) 
-forecast::Acf(temp_ts, na.action = na.interp) 
-forecast::Pacf(temp_ts, na.action = na.pass)
-forecast::Pacf(temp_ts, na.action = na.contiguous)
-forecast::Pacf(temp_ts, na.action = na.interp)
-
-# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
-# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
-
-
-# ....... ect. for each parameter and site combination I might include in the analysis .......
+####Temporal autocorrelation Colorado responses ####
+#I have autcorrelation at lags 1-6, 10-20.
+#Strongest autocorrelation at lag 1 with a bit of a strong aurocorrelation at lag 21 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
 
 
 

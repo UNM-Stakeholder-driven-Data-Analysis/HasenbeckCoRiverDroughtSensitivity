@@ -76,7 +76,7 @@ str(SWSI1981to2023)
 
 ####Data exploration ####
 
-SWSI1981to2023dataexplore <- read_csv("data/processed//SWSI1981to2023.csv")
+SWSI1981to2023dataexplore <- read_csv("data/processed/SWSI1981to2023.csv")
 #Pivot longer to complete data exploration: 
 SWSIdataexplore <- pivot_longer(SWSI1981to2023dataexplore,
              cols = Gunnison:San_Juan,
@@ -249,7 +249,8 @@ Novo
 9h26
 # normalize (scale to 1)
 SWSInorm = SWSIdataexplore
-min_max_norm <- function(x){(x - min(x)) / (max(x) - min(x))}
+min_max_norm <- function(x){(min(x)) / (max(x) - min(x))}
+min_max_norm <- function(x){((x)-min(x))/(max(x)-min(x))*(4 - (-4))+(-4)}
 SWSInorm$SWSI = (lapply(SWSInorm$SWSI,min_max_norm))
 
 View (SWSInorm)

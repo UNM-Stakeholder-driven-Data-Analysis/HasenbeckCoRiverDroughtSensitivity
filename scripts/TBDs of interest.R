@@ -87,6 +87,8 @@ AllTBDiversions <-
        "Structure" = "Structure Name", 
        "Status" = "Data Status"
        )
+#write to csv 
+write_csv(AllTBDiversions, "data/processed/TBdiversionsofinterest")
 
 ####Data exploration####
 
@@ -148,13 +150,17 @@ dat_r =
 
 temp = dat_r[dat_r$Structure == "USBR BLANCO R DIVERSION",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
-
+temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize 
+(hist(temp$Amount, breaks = 100))
+View(temp)
 
 temp = dat_r[dat_r$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
-qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed 
-
+qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
+temp <- subset(temp, Amount != 0) 
+hist(temp$Amount, breaks = 100)
 
 temp = dat_r[dat_r$Structure == "USBR NAVAJO DIVERSION",]
+temp <- subset(temp, Amount != 0) 
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed 
 
 temp = dat_r[dat_r$Structure == "CBT ALVA B ADAMS TUNNEL",]
@@ -228,6 +234,7 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
 #also at lag 10,12 
+
 
 ### subset data to be one structure:Boustead ####
 #FRY ARK PR BOUSTEAD TUNNEL starts 1974-05-31
@@ -340,4 +347,7 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
 #lots of autocorrelation at lag 1,2,5,10,11,12,13,19,20,21,23,24,25
 
+
+
+#### #####
 

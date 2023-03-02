@@ -139,7 +139,7 @@ str(dat)
 summary(dat$Structure)
 # diversions are numerical continous interval
 
-#### check distributions: CBT is normal  ####
+#### check distributions: CBT is normal. Others are 0-modal. Maybe minimum extreme.  ####
 
 dat_r = 
   dat %>% 
@@ -160,75 +160,43 @@ qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
 temp = dat_r[dat_r$Structure == "CBT ALVA B ADAMS TUNNEL",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # normal
 
-# etc........ for the rest of the Structures that I think I'll use in this analysis
 
 ### Examine non-normal data closely ###
 # ask:
-# are outliers making it non-normal?
-# can I justify removing outliers based on my knowledge of the data?
+# are outliers making it non-normal? YES 
+# can I justify removing outliers based on my knowledge of the data? NO. OUTLIERS ARE IMPORTANT. 
 # if data is still non-normal, what distribution is it?
 
-temp = dat_r[dat_r$Structure == "Ammonia",]
+temp = dat_r[dat_r$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
 summary(temp$Amount)
-hist(temp$Amount)
+hist(temp$Amount, breaks = 100)
 plot(density(temp$Amount))
-# this data has 1 an extreme negative outlier. Ammonia Amounts cannot be negative, so this is an error. I will remove it in the main datasets an re-check the data's normality
-dat$Amount[dat$Structure=="Ammonia" & dat$Amount<0] = NA # rplace it in main dataset
-dat_r$Amount[dat_r$Structure=="Ammonia" & dat_r$Amount<0] = NA # replace it in reduced dataset
-temp = dat_r[dat_r$Structure == "Ammonia",]
-qqPlot(temp$Amount); shapiro.test(temp$Amount)
-# there is now a high outlier to examine
-temp = dat_r[dat_r$Structure == "Ammonia",]
-summary(temp$Amount)
-hist(temp$Amount)
-plot(density(temp$Amount, na.rm = T))
-# this data has 1 an extreme positive outlier. Ammonia Amounts do not get this high in natural conditions. This is coal data so maybe it isn't natural, but even still, we'd expect to see more than one point if this were not an error. I will remove it in the main datasets an re-check the data's normality
-dat$Amount[dat$Structure=="Ammonia" & dat$Amount>11] = NA # rplace it in main dataset
-dat_r$Amount[dat_r$Structure=="Ammonia" & dat_r$Amount>11] = NA # replace it in reduced dataset
-temp = dat_r[dat_r$Structure == "Ammonia",]
-qqPlot(temp$Amount); shapiro.test(temp$Amount)
-hist(temp$Amount)
-plot(density(temp$Amount, na.rm = T))
-range(temp$Amount, na.rm = T)
-# still not normal!
-# this looks like a lognormal, Gamma, or Weibull distribution
-# it is bounded above zero and is right-skewed
-# what happens if I log-transform it?
-temp = dat_r[dat_r$Structure == "Ammonia",]
-qqPlot(log10(temp$Amount)); shapiro.test(log10(temp$Amount))
-
-# a log10 transformation did the trick! That tells me that it is lognormal. I will note in my report that a log10 transformation is a possible option if my models don't meet assumptions.
-# Also note the stair-steps in the data at lower Amounts. This could result from detection limits where the low Amount was replaced with a standard Amount. It shouldn't be a huge problem, but it is worth noting as a thing to investigate if the analyses don't turn out well. 
 
 
 #### check for temporal autocorrelation ####
 
-# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
 dat_r = 
   dat %>% 
-  group_by(Structure, Structure) %>% 
-  filter(n() > 100) %>% 
-  arrange(datetime_NM)
-summary(dat_r$Structure) # note which Structures are left after filtering
-summary(dat_r$Structure) # note that VR-1 no longer has any observations, so I will focus on the other two sites
+  group_by(Structure, Date) %>% 
+  arrange(Date)
+summary(dat_r$Structure) 
 
 # checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
 # To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
 # I will start by averaging observations within the same month:
 dat_monthly = 
   dat_r %>%
-  mutate(yr = lubridate::year(datetime_NM)) %>%
-  mutate(mo = lubridate::month(datetime_NM)) %>%
-  dplyr::select(Structure, Structure, yr, mo, Amount) %>%
-  group_by(Structure, Structure, yr, mo) %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::select(Structure, yr, mo, Amount) %>%
+  group_by(Structure, yr, mo) %>%
   summarise(Amount.mn = mean(Amount, na.rm = T)) %>%
   mutate(date = paste(yr, mo, "15", sep="-")) %>%
   mutate(date = as.Date(date))
 
 
-#### Alkalinity in VR-2
-### subset data to be one site and one Structure
-temp = dat_monthly[dat_monthly$Structure == "Alkalinity" & dat_monthly$Structure=="VR-2" ,]
+### subset data to be one structure:CBT #### 
+temp = dat_monthly[dat_monthly$Structure == "CBT ALVA B ADAMS TUNNEL",]
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
@@ -244,7 +212,7 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1979, 10)) 
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1975, 11)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 ### now we're ready to check for temporal autocorrelation in this ts!
@@ -259,11 +227,11 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+#also at lag 10,12 
 
-
-#### Alkalinity in VR-3
-### subset data to be one site and one Structure
-temp = dat_monthly[dat_monthly$Structure == "Alkalinity" & dat_monthly$Structure=="VR-3" ,]
+### subset data to be one structure:Boustead ####
+#FRY ARK PR BOUSTEAD TUNNEL starts 1974-05-31
+temp = dat_monthly[dat_monthly$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
@@ -279,127 +247,97 @@ temp_ts =
 # - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
 # - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
 head (temp_ts)
-temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1983, 1)) 
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1974, 05)) 
 # check that you specified the ts correctly
 print(temp_ts, calendar = T) 
 ### now we're ready to check for temporal autocorrelation in this ts!
-# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details).
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
 forecast::Acf(temp_ts, na.action = na.pass) 
 forecast::Acf(temp_ts, na.action = na.contiguous) 
-forecast::Acf(temp_ts, na.action = na.interp) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
 forecast::Pacf(temp_ts, na.action = na.pass)
 forecast::Pacf(temp_ts, na.action = na.contiguous)
 forecast::Pacf(temp_ts, na.action = na.interp)
 
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
-
-
-# ....... ect. for each Structure and site combination I might include in the analysis .......
-
-
-
-#### check for spatial autocorrelation ####
-
-# I'm interested in spatial and not temporal autocorrelation, so I am going to look at just a few observations across all sites
-
-# reload and format data with all sites
-dat_all = read.csv("Week 5/coal_WQ.csv")
-dat_all$datetime_NM = as.POSIXct(dat_all$Sample_DateTime, format="%m/%d/%y %H:%M", tz="MST")
-dat_all$Structure = as.factor(dat_all$Structure)
-dat_all$Structure = as.factor(dat_all$Structure)
-dat_all$Is_Nondetect = as.factor(dat_all$Is_Nondetect)
-dat_all$Amount = as.numeric(dat_all$Amount)
-# how many sites are there?
-length(unique(dat_all$Structure))
-# 1288
-
-# what Structures were collected across all sites in June 1995?
-dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
-                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
-tb = as.data.frame( with(dat_june1995, table(Structure, Structure)) )
-tb = tb[tb$Freq>0,]
-tb2 = tb %>% group_by(Structure) %>% summarise(n = n()) %>% arrange(desc(n))
-head(tb2, 15)
-#   Structure          # of sites it was collected at in June 1995
-# 1 Bicarbonate        82
-# 2 Calcium            82
-# 3 Chloride           82
-# 4 LabpH              82
-# 5 LabTDS             82
-# 6 Magnesium          82
-# 7 Potassium          82
-# 8 Sodium             82
-# 9 Sulfate            82
-# ^ these are good options for testing for spatial autocorrelation
-
-### Bicarbonate in June 1995
-dat_june1995 = dat_all[dat_all$datetime_NM >= as.POSIXct("1995-06-01") &
-                         dat_all$datetime_NM < as.POSIXct("1995-07-01"),]
-temp = dat_june1995 %>%  filter(Structure=="Bicarbonate")
-# randomly generate lat/lon for demo
-set.seed(42)
-temp$lat = runif(nrow(temp),35.090956,35.634117)
-temp$lon = runif(nrow(temp),-107.65829,-106.65829)
-## Moran.I
-# generate an inverse distance matrix 
-dists = as.matrix(dist(cbind(temp$lon, temp$lat)))
-dists.inv = 1/dists
-diag(dists.inv) = 0
-# calculate Moran.I
-Moran.I(temp$Amount, dists.inv)
-# we can NOT reject the null hypothesis that there is zero spatial autocorrelation present. In other words, there doesn't seem to be a lot of spatial autocorrelation. 
-## Mantel test
-# generate spatial distance matrix
-site_dists = dist(cbind(temp$lon, temp$lat))
-# generate response distance matrix 
-resp_dists = dist(temp$Amount)
-# run Mantel test
-mantel.rtest(site_dists, resp_dists, nrepet = 9999)
-# 'observation' is the correlation between the distance matrices
-# p Amount suggests that they are NOT correlated
-# So, based on this test, there is no detectable correlation
-## Map
-proj = CRS("+proj=longlat +datum=WGS84")
-temp_spatial  <- SpatialPointsDataFrame(coords= cbind(temp$lon, temp$lat),
-                                        data = as.data.frame(cbind(temp$Structure, temp$Amount)),
-                                        proj4string = proj)
-plot(temp_spatial)
-
-# ect.......... for other Structures of interest and for a few other time points, depending on how your data is structured ...........
-
-#
-#### check correlation between variables ####
-
-# first, returning to the dataset of just 3 sites and more than 100 obs per Structure (dat_r), reformat data to make it wider, such that Structures get their own columns. 
-
-dat_r_long = dat_r %>% 
-  select(c(Structure, datetime_NM, Structure, Amount))%>%
-  group_by(Structure, datetime_NM, Structure) %>%
-  summarise(Amount = mean(Amount, na.rm = T)) %>%
-  pivot_wider(names_from = Structure, 
-              Amounts_from = Amount,
-              Amounts_fill = list(Amount = NA))
-
-# reduce data down to one site - VR-2
-temp = dat_r_long %>% filter(Structure=="VR-2") 
-# plot correlations (of data columns only)
-pairs.panels(temp[,3:24], scale=T)
-pairs.panels(temp[,3:24], scale=F)
-# make table of correlations (I am rounding and replacing low Amounts with text so that it is easier to see results)
-tab = round(as.data.frame(cor(cov(temp[,3:24], use="na.or.complete"))), 2)
-tab[abs(tab)<0.4] = "no_corr"
-
-# reduce data down to one site - VR-3
-temp = dat_r_long %>% filter(Structure=="VR-3")
-# plot correlations (of data columns only)
-pairs.panels(temp[,3:24], scale=T)
-pairs.panels(temp[,3:24], scale=F)
-# make table of correlations (I am rounding and replacing low Amounts with text so that it is easier to see results)
-tab = round(as.data.frame(cor(cov(temp[,3:24], use="na.or.complete"))), 2)
-tab[abs(tab)<0.4] = "no_corr"
+#lots of autocorrelation at lag 1,2,11,12,14,23,24 
 
 
 
+
+
+### subset data to be one structure:Blanco  ####
+#USBR BLANCO R DIVERSION starts 1974-03-31
+
+temp = dat_monthly[dat_monthly$Structure == "USBR BLANCO R DIVERSION",]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(Amount = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1974, 05)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+#lots of autocorrelation at lag 1,2,11,12,13,23,
+
+
+### subset data to be one structure:	USBR NAVAJO DIVERSION ####
+#USBR NAVAJO DIVERSION starts 1974-11-30
+temp = dat_monthly[dat_monthly$Structure == "USBR NAVAJO DIVERSION",]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(Amount = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1974, 05)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+#lots of autocorrelation at lag 1,2,5,10,11,12,13,19,20,21,23,24,25
 
 

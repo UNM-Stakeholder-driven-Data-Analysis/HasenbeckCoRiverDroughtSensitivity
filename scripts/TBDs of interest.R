@@ -12,6 +12,11 @@
 #### libraries ####
 library(readr)
 library(tidyverse)
+library(lubridate)
+library(psych) 
+library(car) 
+library(tsibble)
+library(forecast) 
 
 
 
@@ -43,9 +48,40 @@ NAVAJO_DIVERSIONS <- read_csv("~/OneDrive - University of New Mexico/Spring 2023
 BLANCO_DIVERSIONS <- read_csv("~/OneDrive - University of New Mexico/Spring 2023/Stakeholder Analysis/HasenbeckCoRiverDroughtSensitivity/data/raw/USBR BLANCO R DIVERSION_2904667_Diversions.csv")
 
 
-#Simplifying data for analysis 
+#### Cleaning and clarifying data #### 
+#### Simplifying data for analysis #
 ADAMS_TUNNEL_Diversions <- ADAMS_TUNNEL_Diversions %>% select(WDID,`Structure Name`,Date,Amount,`Obs Code`, `Data Status`)
 BOUSTEAD_Diversions <- BOUSTEAD_Diversions%>% select(WDID,`Structure Name`,Date,Amount,`Obs Code`, `Data Status`)
 NAVAJO_DIVERSIONS <- NAVAJO_DIVERSIONS%>% select(WDID,`Structure Name`,Date,Amount,`Obs Code`, `Data Status`)
 BLANCO_DIVERSIONS <- BLANCO_DIVERSIONS%>% select(WDID,`Structure Name`,Date,Amount,`Obs Code`, `Data Status`)
+
+## Joining data ### 
+AllTBDiversions<- bind_rows(ADAMS_TUNNEL_Diversions, BOUSTEAD_Diversions, NAVAJO_DIVERSIONS, BLANCO_DIVERSIONS)
+
+#Define dates, data types: 
+AllTBDiversions$WDID = as.factor(AllTBDiversions$WDID)
+AllTBDiversions$`Structure Name` = as.factor(AllTBDiversions$`Structure Name`)
+AllTBDiversions$`Obs Code` = as.factor(AllTBDiversions$`Obs Code`)
+AllTBDiversions$`Data Status` = as.factor(AllTBDiversions$`Data Status`)
+AllTBDiversions$Amount = as.numeric(AllTBDiversions$Amount)
+
+#Changing date. Format is 10/31/2022 00:00
+as.POSIXct(AllTBDiversions$Date, format="%m/%d/%y %H:%M", tz="MST")
+View(AllTBDiversions)
+
+
+
+
+#### INCOMPLETE DO NOT RUN Renaming categories based on metadata ####
+ADAMS_TUNNEL_Diversions[ADAMS_TUNNEL_Diversions$obsCode == "*"] <- "obs"   #amt observed in person
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "U"] <- "unk-user" # user supplied unk reliability 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "K"] <- "k-user" #user supplied known reliability
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "k"] <- "k-user" #user supplied known reliability 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "R"] <- "obs"   #amount recorded by device
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "S"] <- "estimate"   #amount estimated in person 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "E"] <- "estimate"   #date and amount estimated 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "C"] <- "calculated" #formula 
+AllWDIDsimplified$obsCode[AllWDIDsimplified$obsCode == "M"] <- "modeled"   # model
+
+
 

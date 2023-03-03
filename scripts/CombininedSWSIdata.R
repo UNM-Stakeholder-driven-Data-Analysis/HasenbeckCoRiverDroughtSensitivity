@@ -98,6 +98,14 @@ SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 write_csv(SWSIdataexplore,"data/processed/SWSIdataexplore.csv")
 #### describe dataset size and structure ####
 
+SWSIdataexplore <- read_csv("data/processed/SWSI1981to2023.csv")
+
+SWSIdataexplore <- SWSIdataexplore %>%
+  pivot_longer(cols = "Gunnison":"San_Juan", 
+               names_to = "basin",
+               values_to = "SWSI")
+
+
 head(SWSIdataexplore)
 #Date, single SWSI observation sorted by basin. 
 
@@ -107,8 +115,7 @@ str(SWSIdataexplore)
 #Total observations: 3570
 #Total number of variables: 3 (date, basins, SWSI value)
 
-
-
+View(SWSIdataexplore)
 
 ### check timesteps by looking and time series of most frequently collected parameters
 # make dataset of one of the most frequently collected parameters
@@ -125,8 +132,30 @@ ggplot(data=SWSI_lts, aes(x=doy, y=SWSI_lts$SWSI, color=basin))+
   facet_wrap(~year, scales= "fixed")+
   scale_y_continuous(breaks = c(-4,-2,0,2,4), labels = c(-4,-2,0,2,4)) +
   theme(legend.title = element_blank()) +
-  theme_bw()
+  theme_bw() +
+  ggtitle("SWSI over Time") + # for the main title
+  xlab("Day of Year") + # for the x axis label
+  ylab("SWSI Value") # for the y axis label
 
+duplicates(SWSI_lts)
+
+# For unscaled parameters 2010-2011 only 
+SWSI_ltsnorm = 
+  SWSInorm %>% 
+  group_by(basin) %>% 
+  arrange(Date)
+# add year and day of year for plotting
+SWSI_ltsnorm$year = lubridate::year(SWSI_lts$Date)
+SWSI_ltsnorm$doy = lubridate::yday(SWSI_lts$Date)
+# plot
+unscaledplot <- ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
+  geom_point() + geom_path()+
+  xlim(c(as.Date("2010-01-01"), as.Date("2012-04-01")))+
+  theme(legend.title = element_blank()) +
+  theme_bw() + 
+  ggtitle("SWSI Values by Basin, unscaled data") + # for the main title
+  xlab("Day of Year") + # for the x axis label
+  ylab("SWSI Value") # for the y axis label
 
 # For scaled parameters 2010-2011 only 
 SWSI_ltsnorm = 
@@ -137,11 +166,14 @@ SWSI_ltsnorm =
 SWSI_ltsnorm$year = lubridate::year(SWSI_lts$Date)
 SWSI_ltsnorm$doy = lubridate::yday(SWSI_lts$Date)
 # plot
-ggplot(data=SWSI_ltsnorm, aes(x=Date, y=SWSI, color=basin))+
+scaled_plot<- ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
   geom_point() + geom_path()+
   xlim(c(as.Date("2010-01-01"), as.Date("2012-04-01")))+
   theme(legend.title = element_blank()) +
-  theme_bw()
+  theme_bw() + 
+  ggtitle("SWSI Values by Basin, scaled data") + # for the main title
+  xlab("Day of Year") + # for the x axis label
+  ylab("SWSI Value") # for the y axis label
 
 
 #2010 and 2011 have duplicate values that are different from eachother. 

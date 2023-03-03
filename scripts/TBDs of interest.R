@@ -36,9 +36,7 @@ print(TBDs_of_Interest$Structure_WDID_CSV) # getting relevant water ids
 
 #CBT: Adams Tunnel: 5104634 (pipe) 5104634 exports transmountain water to 0404634 - ADAMS TUNNEL. Only has diversions. 
 ADAMS_TUNNEL_Diversions <- read_csv("~/OneDrive - University of New Mexico/Spring 2023/Stakeholder Analysis/HasenbeckCoRiverDroughtSensitivity/data/raw/CBT ALVA B ADAMS TUNNEL_5104634_Diversions.csv")
-#0404634 (tunnel) This has diversions and releases because it is what the pipe dumps into. NO DATA PRE 1994. Removing from analyis and using only 5104634. 
-ADAMS_TUNNEL_0404634_Diversions_Releases <- read_csv("~/OneDrive - University of New Mexico/Spring 2023/Stakeholder Analysis/HasenbeckCoRiverDroughtSensitivity/data/raw/ADAMS TUNNEL_0404634_Diversions_Releases.csv")
-
+#0404634 (tunnel) This has diversions and releases because it is what the pipe (5104634) dumps into. NO DATA PRE 1994. Removing from analyis and using only 5104634. 
 
 #Fry-Ark: 3804625 Boustead Tunnel
 BOUSTEAD_Diversions <- read_csv("~/OneDrive - University of New Mexico/Spring 2023/Stakeholder Analysis/HasenbeckCoRiverDroughtSensitivity/data/raw/FRY ARK PR BOUSTEAD TUNNEL_3804625_Diversions.csv")
@@ -102,8 +100,16 @@ AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "USBR NAVAJO DIVER
 AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "USBR BLANCO R DIVERSION"] <- "Rio_Grande"   
 AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "FRY ARK PR BOUSTEAD TUNNEL"] <- "Arkansas" 
 
+View(AllTBDiversions)
+Print(NA)
+
 #write to csv 
 write_csv(AllTBDiversions, "data/processed/TBdiversionsofinterest")
+
+
+AllTBDiversions %>%
+  ggplot(aes(x = Structure, y = Amount, color = basin)) + 
+  geom_boxplot()
 
 ####Data exploration####
 
@@ -194,6 +200,10 @@ summary(temp$Amount)
 hist(temp$Amount, breaks = 100)
 plot(density(temp$Amount))
 
+
+#Log normalizing - can't get code to run. 
+qqPlot(temp$Date(from = 1980-01-01),
+       log10(temp$Amount)); shapiro.test(log10(temp$Amount))
 
 #### check for temporal autocorrelation ####
 
@@ -292,7 +302,7 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
-<<<<<<< HEAD
+HEAD
 #lots of autocorrelation at lag 1,2,11,12,14,23,24 
 
 
@@ -303,13 +313,12 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 #USBR BLANCO R DIVERSION starts 1974-03-31
 
 temp = dat_monthly[dat_monthly$Structure == "USBR BLANCO R DIVERSION",]
-=======
 #also at lag 10,12 
 
 ### subset data to be one structure:Boustead ####
 #FRY ARK PR BOUSTEAD TUNNEL starts 1974-05-31
 temp = dat_monthly[dat_monthly$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
->>>>>>> main
+main
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 

@@ -209,6 +209,7 @@ dat_monthly =
 
 ### subset data to be one structure:CBT #### 
 temp = dat_monthly[dat_monthly$Structure == "CBT ALVA B ADAMS TUNNEL",]
+<<<<<<< HEAD
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
@@ -245,6 +246,60 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 ### subset data to be one structure:Boustead ####
 #FRY ARK PR BOUSTEAD TUNNEL starts 1974-05-31
 temp = dat_monthly[dat_monthly$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
+=======
+>>>>>>> main
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(Amount = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+<<<<<<< HEAD
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1974, 05)) 
+=======
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1975, 11)) 
+>>>>>>> main
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+<<<<<<< HEAD
+#lots of autocorrelation at lag 1,2,11,12,14,23,24 
+
+
+
+
+
+### subset data to be one structure:Blanco  ####
+#USBR BLANCO R DIVERSION starts 1974-03-31
+
+temp = dat_monthly[dat_monthly$Structure == "USBR BLANCO R DIVERSION",]
+=======
+#also at lag 10,12 
+
+### subset data to be one structure:Boustead ####
+#FRY ARK PR BOUSTEAD TUNNEL starts 1974-05-31
+temp = dat_monthly[dat_monthly$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
+>>>>>>> main
 ### make this a time series object
 ## first, make doubly sure that the data is arranged by time before converting to ts object!
 temp = temp %>% arrange(date) 
@@ -275,6 +330,9 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+<<<<<<< HEAD
+#lots of autocorrelation at lag 1,2,11,12,13,23,
+=======
 #lots of autocorrelation at lag 1,2,11,12,14,23,24 
 
 
@@ -308,6 +366,7 @@ print(temp_ts, calendar = T)
 forecast::Acf(temp_ts, na.action = na.pass) 
 forecast::Acf(temp_ts, na.action = na.contiguous) 
 forecast::Acf(temp_ts, na.action = na.interp)
+>>>>>>> main
 
 forecast::Pacf(temp_ts, na.action = na.pass)
 forecast::Pacf(temp_ts, na.action = na.contiguous)
@@ -317,7 +376,7 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
 #lots of autocorrelation at lag 1,2,11,12,13,23,
 
-
+<<<<<<< HEAD
 ### subset data to be one structure:	USBR NAVAJO DIVERSION ####
 #USBR NAVAJO DIVERSION starts 1974-11-30
 temp = dat_monthly[dat_monthly$Structure == "USBR NAVAJO DIVERSION",]
@@ -352,8 +411,43 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 # acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
 # pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
 #lots of autocorrelation at lag 1,2,5,10,11,12,13,19,20,21,23,24,25
+=======
 
+### subset data to be one structure:	USBR NAVAJO DIVERSION ####
+#USBR NAVAJO DIVERSION starts 1974-11-30
+temp = dat_monthly[dat_monthly$Structure == "USBR NAVAJO DIVERSION",]
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  temp %>% 
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(Amount = NA)) %>%
+  as_tsibble(index = date)
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Amount.mn, frequency=12, start=c(1974, 05)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) 
+forecast::Acf(temp_ts, na.action = na.contiguous) 
+forecast::Acf(temp_ts, na.action = na.interp)
+>>>>>>> main
 
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+# acf tells me that there is temporal autocorrelation. The sin-wave-like pattern is typical of a ts impacted by seasonality
+# pcaf tells me that strongest source of autocorrelation is at lag 1, which indicates a random walk/AR1 process. There is possibly ac at other lags, depending on how NAs are handled. 
+#lots of autocorrelation at lag 1,2,5,10,11,12,13,19,20,21,23,24,25
 
 #### #####
 

@@ -93,6 +93,15 @@ AllTBDiversions <-
        "Structure" = "Structure Name", 
        "Status" = "Data Status"
        )
+
+#Add basins to TMD
+AllTBDiversions$SourceBasin <- c("Colorado")
+AllTBDiversions$DestinationBasin <- c("Arkansas")
+AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "CBT ALVA B ADAMS TUNNEL"] <- "South_Platte"   
+AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "USBR NAVAJO DIVERSION"] <- "Rio_Grande"   
+AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "USBR BLANCO R DIVERSION"] <- "Rio_Grande"   
+AllTBDiversions$DestinationBasin[AllTBDiversions$Structure == "FRY ARK PR BOUSTEAD TUNNEL"] <- "Arkansas" 
+
 #write to csv 
 write_csv(AllTBDiversions, "data/processed/TBdiversionsofinterest")
 
@@ -124,6 +133,7 @@ ggplot(data=dat_lts_alk, aes(x=doy, y=Amount, color=Structure))+
   facet_wrap(~year, scales="free_y")+
   theme(legend.title = element_blank()) +
   theme_bw()
+
 
 
 ### How many variables are in your dataset?

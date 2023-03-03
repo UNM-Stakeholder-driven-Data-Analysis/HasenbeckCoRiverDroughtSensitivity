@@ -140,13 +140,13 @@ ggplot(data=SWSI_lts, aes(x=doy, y=SWSI_lts$SWSI, color=basin))+
 duplicates(SWSI_lts)
 
 # For unscaled parameters 2010-2011 only 
-SWSI_ltsnorm = 
-  SWSInorm %>% 
+SWSI_lts = 
+  SWSI_lts %>% 
   group_by(basin) %>% 
   arrange(Date)
 # add year and day of year for plotting
-SWSI_ltsnorm$year = lubridate::year(SWSI_lts$Date)
-SWSI_ltsnorm$doy = lubridate::yday(SWSI_lts$Date)
+SWSI_lts$year = lubridate::year(SWSI_lts$Date)
+SWSI_lts$doy = lubridate::yday(SWSI_lts$Date)
 # plot
 unscaledplot <- ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
   geom_point() + geom_path()+
@@ -166,7 +166,7 @@ SWSI_ltsnorm =
 SWSI_ltsnorm$year = lubridate::year(SWSI_lts$Date)
 SWSI_ltsnorm$doy = lubridate::yday(SWSI_lts$Date)
 # plot
-scaled_plot<- ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
+ggplot(data=SWSI_ltsnorm, aes(x=Date, y=SWSI, color=basin))+
   geom_point() + geom_path()+
   xlim(c(as.Date("2010-01-01"), as.Date("2012-04-01")))+
   theme(legend.title = element_blank()) +
@@ -175,7 +175,7 @@ scaled_plot<- ggplot(data=SWSI_lts, aes(x=Date, y=SWSI, color=basin))+
   xlab("Day of Year") + # for the x axis label
   ylab("SWSI Value") # for the y axis label
 
-
+view(SWSInorm)
 #2010 and 2011 have duplicate values that are different from eachother. 
 # timesteps are regular, monthly
 # timesteps are not sub-daily, at most frequent are approximately monthly
@@ -313,12 +313,16 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #### Making histogram ####
 #non-normalized data 
 hist(SWSIdataexplore_r$SWSI,
-     breaks = 1000
+     breaks = 100
     )
+
+
 #normalized data 
 hist(SWSInorm$SWSI,
-     breaks = 50
-)
+     breaks = 50, 
+     main="Distribution of all SWSI data",
+     xlab="SWSI Value")
+
 #### Density function ####
 plot(density(SWSIdataexplore_r$SWSI, na.rm = T))
 range(SWSIdataexplore_r$SWSI, na.rm = T)
@@ -344,7 +348,7 @@ SWSInorm$SWSI = rescale(SWSInorm$SWSI,
 
 ####
 
-#### temporal autocorrelation ####
+#### temporal autocorrelation: Colorado  ####
 # I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
 SWSItemporal_r = 
   SWSIdataexplore %>% 
@@ -403,6 +407,436 @@ forecast::Pacf(temp_ts, na.action = na.interp)
 #I have autcorrelation at lags 1-6, 10-20.
 #Strongest autocorrelation at lag 1 with a bit of a strong aurocorrelation at lag 21 
 #Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+
+#### temporal autocorrelation:Yampa  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "Yampa_White_N_Platte",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation Yampa responses ####
+#I have autcorrelation at lags 1-2, 
+#Strongest autocorrelation at lag 1, less autocorrelation at lag 2
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+#### temporal autocorrelation: Rio Grande  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "Rio_Grande",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation Rio Grande responses ####
+#I have autcorrelation at lags 1-5, 20.
+#Strongest autocorrelation at lag 1 with a bit of a strong aurocorrelation at lag 21 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+#### temporal autocorrelation: San Juan   ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "San_Juan",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation San Juan  responses ####
+#I have autcorrelation at lags 1-10.
+#Strongest autocorrelation at lag 1 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+#### temporal autocorrelation: S Platte  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "South_Platte",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation S Platte responses ####
+#I have autcorrelation at lags 1-7, 12-18.
+#Strongest autocorrelation at lag 1. 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+#### temporal autocorrelation: Arkansas  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "Arkansas",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation Arkansas  responses ####
+#I have autcorrelation at lags 1-11, 10-20.
+#Strongest autocorrelation at lag 1 with a bit of a strong aurocorrelation at lag 5 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+#### temporal autocorrelation: Gunnison  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "Gunnison",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation Gunnison responses ####
+#I have autcorrelation at lags 1-6
+#Strongest autocorrelation at lag 1 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
+
+
+#### temporal autocorrelation: all basins  ####
+# I'm going to check these one site at a time and only of data with at least 100 obs in each site, as I am unlikely to analyze less frequently gathered data
+SWSItemporal_r = 
+  SWSIdataexplore %>% 
+  group_by(Date, basin) %>% 
+  arrange(Date)
+
+# checking for temporal autocorrelation requires the data to be a time series object (read ?ts for details on this)
+# To achieve this, I need regularly spaced data. This data is irregularly spaced, approximately monthly, but sometimes there are more than one observations per month or fewer
+# I will start by averaging observations within the same month:
+dat_monthly = 
+  SWSItemporal_r %>%
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::group_by(basin, SWSI, yr, mo) %>%
+  summarise(Value.mn = mean(SWSI, na.rm = T)) %>%
+  mutate(date = paste(yr, mo, "15", sep="-")) %>%
+  mutate(date = as.Date(date))
+
+### subset data to be one site and one parameter
+temp = dat_monthly[dat_monthly$basin == "Gunnison",]
+
+### make this a time series object
+## first, make doubly sure that the data is arranged by time before converting to ts object!
+temp = temp %>% arrange(date) 
+## second, make the spacing of dates consistent and fill in missing obs with NA. This is a handy fxn. You can also create a df of evenly spaced dates and left_join the data to this.
+temp_ts =
+  #remove duplicates
+  temp[!duplicated(temp$SWSI), ]
+
+temp_ts = temp_ts %>%
+  complete(date = seq(min(date), max(date), by = "1 month"), 
+           fill = list(value = NA)) %>%
+  as_tsibble(index = date)
+
+
+## finally, convert to a ts object
+# a ts object is a vector of data taken sequentially through time. Required arguments are:
+# - the data vector
+# - the frequency, which is the number of observations per unit of time. Lots of ways to specify this. For monthly data, you can put in 12 and it will assume that's 12 obs in a year. Google for help for other frequencies.
+# - the start, which specifies when the first obs occured. Lots of ways to specify this. For monthly data, you can put in c(year, month) and it will know what you mean. 
+head (temp_ts)
+temp_ts = ts(temp_ts$Value.mn, frequency=12, start=c(1980, 01)) 
+# check that you specified the ts correctly
+print(temp_ts, calendar = T) 
+### now we're ready to check for temporal autocorrelation in this ts!
+# I prefer the forecast pkg's Acf fxn over base R acf() because Acf() doesn't include 0 (which is always 1) and shows month #s by default instead of decimal years. Note the different options for dealing with NAs and how this changes the results (see ?na.fail and ?Acf for details). 
+forecast::Acf(temp_ts, na.action = na.pass) #fills in with likely points
+forecast::Acf(temp_ts, na.action = na.contiguous) #fills in based on longest time period with nas
+forecast::Acf(temp_ts, na.action = na.interp) # uses time series model to fill in NA 
+
+forecast::Pacf(temp_ts, na.action = na.pass)
+forecast::Pacf(temp_ts, na.action = na.contiguous)
+forecast::Pacf(temp_ts, na.action = na.interp)
+
+####Temporal autocorrelation Gunnison responses ####
+#I have autcorrelation at lags 1-6
+#Strongest autocorrelation at lag 1 
+#Auto regressive process. autocorrelation is at lag 1, which indicates a random walk/AR1 process
+
 
 
 

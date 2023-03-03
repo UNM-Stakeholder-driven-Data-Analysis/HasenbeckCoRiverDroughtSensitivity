@@ -4,14 +4,14 @@
 library(tidyverse) 
 library(lme4) # for creating mixed models
 library(car) # for Anova(), vif()
-library("MuMIn") # for AICc
-library("emmeans") # for emmeans, emtrends, all the post hoc tests and plotting
+library(MuMIn) # for AICc
+library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
 
 
 ## here is a cheatsheet for emmeans. Super helpful!!
 # https://timmastny.rbind.io/blog/tests-pairwise-categorical-mean-emmeans-contrast/
 
-####data prep ####
+####data prep (this is saved to csv so can skip to read data for linear regression) ####
 Diversions <- read_csv("data/processed/TBdiversionsofinterest")
 SWSI <- read_csv("data/processed/SWSI1981to2023.csv")
 
@@ -22,19 +22,9 @@ SWSI <- SWSI %>%
                values_to = "SWSI")
 
 
-
-#Add basins to TMD
-Diversions$SourceBasin <- c("Colorado")
-Diversions$DestinationBasin <- c("Arkansas")
-Diversions$DestinationBasin[Diversions$Structure == "CBT ALVA B ADAMS TUNNEL"] <- "South_Platte"   
-Diversions$DestinationBasin[Diversions$Structure == "USBR NAVAJO DIVERSION"] <- "Rio_Grande"   
-Diversions$DestinationBasin[Diversions$Structure == "USBR BLANCO R DIVERSION"] <- "Rio_Grande"   
-Diversions$DestinationBasin[Diversions$Structure == "FRY ARK PR BOUSTEAD TUNNEL"] <- "Arkansas"   
 view(Diversions)
 
-#Join 
-
-# I will start by averaging observations within the same month:
+#Joining data 
 Diversions = 
   Diversions %>%
   mutate(yr = lubridate::year(Date)) %>%
@@ -44,30 +34,25 @@ Diversions =
   mutate(date = paste(yr, mo, "1", sep="-")) %>%
   rename(Date = date) 
 
-Diversions$Date = mutate(date = paste(Diversions$yr, Diversions$mo, "1", sep="-"))
-  
 Diversions$Date = as.Date(Diversions$Date)
 
-write_csv(Diversions,file = "data/processed/DiversionsDateMatchSWSI")
+#panicked writing to csv bc i didn't know how i did it but now i do so i might delete when i have time 
+
+write_csv(Diversions,file = "data/processed/DiversionsDateMatchSWSI") 
 
 CombinedData <- full_join(Diversions,SWSI, 
                           by = "Date") 
-
+#panicked writing to csv bc i didn't know how i did it but now i do so i might delete when i have time 
 write_csv(CombinedData,file = "data/processed/DiversionsANDSWSI")
 
 #### Read data for linear regression ####
 
 CombinedData <- read_csv("data/processed/DiversionsANDSWSI", )
   
-ColoradoSource<-CombinedData[(CombinedData$basin=="Colorado"),]
-
-View(CombinedData2)
 
 #### linear model (no random effects) ####
 
-# going to compare body mass across the species #
-
-## plot the data
+## plot the data ####
 Diversions %>%
   ggplot(aes(x = Structure, y = Amount)) + 
   geom_boxplot()
@@ -75,44 +60,55 @@ Diversions %>%
 SWSI %>% ggplot(aes(x = basin, y = SWSI)) + 
   geom_boxplot()
 
+CombinedData %>%
+  ggplot(aes(x = Structure, y = Amount, color = basin)) + 
+  geom_boxplot()
+
 
 # create the linear model
 #response variable 
-linearmodel <- lm(body_mass_g ~ species * sex, data = penguins, na.action=na.omit)
-linearmodelColoradoSource <- lm(Diversions$Amount ~ SWSI$SWSI)
-
-lm(paste(i, "~Diversions$Amount"), data = CombinedData)
-Call:
-  lm(formula = paste(i, "~ Sepal.Width"), data = iris)
-
-
-# check assumptions
-plot(mass_species_m1)
+linearmodel <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit)
+plot(linearmodel) # check assumptions
 
 
 # run type 3 ANOVA
-Anova(mass_species_m1, type = 3)
+Anova(linearmodel, type = 3)
 
-mass_species_m1 <- lm(body_mass_g ~ species * sex, data = penguins, na.action=na.omit)
-mass_species_additive <- lm(body_mass_g ~ species + sex, data = penguins, na.action=na.omit)
-mass_species_sex <- lm(body_mass_g ~ sex, data = penguins, na.action=na.omit)
-mass_species_species <- lm(body_mass_g ~ species, data = penguins, na.action=na.omit)
-mass_species_null <- lm(body_mass_g ~  1, data = penguins, na.action=na.omit)
+m1 <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit) #does not fit
+m2 <- lm(Amount ~ SWSI + basin, data = CombinedData, na.action=na.omit) #does not fit
+m3 <- lm(Amount ~ basin, data = CombinedData, na.action=na.omit) #does not fit
+m4 <- lm(Amount ~ SWSI, data = CombinedData, na.action=na.omit) #does not fit 
+null <- lm(Amount ~  1, data = CombinedData, na.action=na.omit) #does not fit 
 
-AICc(mass_species_m1,mass_species_additive,mass_species_sex,  mass_species_species, mass_species_null)
+plot(m1)
+plot(m2)
+plot(m3)
+plot(m4)
+plot(null)
 
-anova(mass_species_m1, mass_species_additive)
+AICc(m1, m2, m3, m4, null)
+#
+#df     AICc
+#m1   15 285500.2
+#m2    9 285499.5
+#m3    8 285612.2
+#m4    3 285488.9 **
+#null  2 291178.0
+
+anova(m1, m4)
+#I'm not sure what this means? 
 
 #post-hoc test
-penguins %>%
-  select(species, body_mass_g, sex) %>%
+CombinedData %>%
+  select(basin, Amount, SWSI) %>%
   drop_na() %>%
-  ggplot(aes(x = species, y = body_mass_g)) + 
-  geom_boxplot() + facet_grid(~sex)
+  ggplot(aes(x = SWSI, y = Amount)) + 
+  geom_boxplot() + facet_grid(~basin)
 
 
 # tukey test comparing species for females and for males
-emmeans(mass_species_m1, pairwise ~ species | sex)
+emmeans(m1, pairwise ~ SWSI | basin)
+#Doesn't calculate :( 
 
 # tukey test comparing males vs famales for each species
 emmeans(mass_species_m1, pairwise ~ sex | species)

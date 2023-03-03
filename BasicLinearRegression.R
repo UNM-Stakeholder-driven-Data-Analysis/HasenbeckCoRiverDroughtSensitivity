@@ -53,6 +53,12 @@ write_csv(Diversions,file = "data/processed/DiversionsDateMatchSWSI")
 CombinedData <- full_join(Diversions,SWSI, 
                           by = "Date") 
 
+write_csv(CombinedData,file = "data/processed/DiversionsANDSWSI")
+
+#### Read data for linear regression ####
+
+CombinedData <- read_csv("data/processed/DiversionsANDSWSI", )
+  
 ColoradoSource<-CombinedData[(CombinedData$basin=="Colorado"),]
 
 View(CombinedData2)

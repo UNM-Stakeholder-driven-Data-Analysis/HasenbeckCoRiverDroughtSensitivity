@@ -42,17 +42,21 @@ Diversions =
   dplyr::select(Structure, yr, mo, Amount) %>%
   group_by(Structure, yr, mo) %>%
   mutate(date = paste(yr, mo, "1", sep="-")) %>%
-  rename(Date = date)
+  rename(Date = date) 
 
-Diversions$Date = mutate(Date = paste(yr, mo, "1", sep="-")) %>% 
+Diversions$Date = mutate(date = paste(Diversions$yr, Diversions$mo, "1", sep="-"))
   
-Diversions$Date = as.Date(Diversions$Date,format ="%m-%d-%Y")
+Diversions$Date = as.Date(Diversions$Date)
 
+write_csv(Diversions,file = "data/processed/DiversionsDateMatchSWSI")
 
 CombinedData <- full_join(Diversions,SWSI, 
-                          by = "Date")
+                          by = "Date") 
 
-View(CombinedData)
+ColoradoSource<-CombinedData[(CombinedData$basin=="Colorado"),]
+
+View(CombinedData2)
+
 #### linear model (no random effects) ####
 
 # going to compare body mass across the species #
@@ -69,7 +73,13 @@ SWSI %>% ggplot(aes(x = basin, y = SWSI)) +
 # create the linear model
 #response variable 
 linearmodel <- lm(body_mass_g ~ species * sex, data = penguins, na.action=na.omit)
-linearmodel <- lm(Diversions$Amount ~ SWSI$SWSI, na.action=na.omit)
+linearmodelColoradoSource <- lm(Diversions$Amount ~ SWSI$SWSI)
+
+lm(paste(i, "~Diversions$Amount"), data = CombinedData)
+Call:
+  lm(formula = paste(i, "~ Sepal.Width"), data = iris)
+
+
 # check assumptions
 plot(mass_species_m1)
 

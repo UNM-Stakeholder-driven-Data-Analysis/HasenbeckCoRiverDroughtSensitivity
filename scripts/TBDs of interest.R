@@ -26,7 +26,7 @@ Colorado_Transbasin_Diversions <- read_csv("~/OneDrive - University of New Mexic
 #Select only three relevant diversions: 
 TBDs_of_Interest = Colorado_Transbasin_Diversions[Colorado_Transbasin_Diversions$TransbasinDiversionName 
                                                  %in% c("Charles H. Boustead Tunnel","San Juan-Chama Project","Colorado-Big Thompson Project"), ]
-
+View(TBDs_of_Interest)
 print(TBDs_of_Interest$Structure_WDID_CSV) # getting relevant water ids
 
 
@@ -80,6 +80,12 @@ AllTBDiversions$`Data Status` = as.factor(AllTBDiversions$`Data Status`)
 AllTBDiversions$Amount = as.numeric(AllTBDiversions$Amount)
 AllTBDiversions$Date = as.Date(AllTBDiversions$Date, format="%m/%d/%Y %H:%M") #Date format is 10/31/2022 00:00
 
+AllTBDiversions$Date = 
+  mutate(yr = lubridate::year(Date)) %>%
+  mutate(mo = lubridate::month(Date)) %>%
+  dplyr::select(Structure, yr, mo, Amount) %>%
+  group_by(Structure, yr, mo) %>%
+  AllTBDiversions$Date = mutate(Date = paste(yr, mo, "1", sep="-")) 
 #Renaming columns
 AllTBDiversions <- 
   rename(AllTBDiversions, 
@@ -150,7 +156,7 @@ dat_r =
 
 temp = dat_r[dat_r$Structure == "USBR BLANCO R DIVERSION",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
-temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize 
+temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize
 (hist(temp$Amount, breaks = 100))
 View(temp)
 

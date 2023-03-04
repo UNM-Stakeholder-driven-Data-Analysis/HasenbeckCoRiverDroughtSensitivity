@@ -108,8 +108,9 @@ write_csv(AllTBDiversions, "data/processed/TBdiversionsofinterest")
 
 
 AllTBDiversions %>%
-  ggplot(aes(x = Structure, y = Amount, color = basin)) + 
-  geom_boxplot()
+  ggplot(aes(x = Structure, y = Amount, color = DestinationBasin)) + 
+  geom_boxplot() +
+  labs(title = "Amount diverted by structure destination river basin") # for the main title, axis labels and legend titles
 
 ####Data exploration####
 
@@ -158,12 +159,21 @@ range(with(dat, table(Amount, Structure)))
 # Yes in space - observations were collected in three sites
 
 #### describe data types ####
-
+sum(is.na(dat))
 str(dat)
 summary(dat$Structure)
 # diversions are numerical continous interval
 
-#### check distributions: CBT is normal. Others are 0-modal. Maybe minimum extreme.  ####
+ggplot(data=dat, aes(x=doy, y=dat$Amount, color=Structure))+
+  geom_point() + geom_path()+
+  facet_wrap(~year, scales= "fixed")+
+  theme(legend.title = element_blank()) +
+  theme_bw() +
+  labs(title = "Diversions over time") + # for the main title
+  xlab("Day of Year") + # for the x axis label
+  ylab("Amount Diverted") # for the y axis label
+
+#### check distributions: CBT is normal. Others are 0-inflated. Maybe minimum extreme.  ####
 
 dat_r = 
   dat %>% 
@@ -173,7 +183,7 @@ dat_r =
 temp = dat_r[dat_r$Structure == "USBR BLANCO R DIVERSION",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
 temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize
-(hist(temp$Amount, breaks = 100))
+(hist(temp$Amount, breaks = 100, main = "Blanco Diversion distribution", xlab = "AF diverted"))
 View(temp)
 
 temp = dat_r[dat_r$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
@@ -185,8 +195,10 @@ temp = dat_r[dat_r$Structure == "USBR NAVAJO DIVERSION",]
 temp <- subset(temp, Amount != 0) 
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed 
 
+
 temp = dat_r[dat_r$Structure == "CBT ALVA B ADAMS TUNNEL",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # normal
+(hist(temp$Amount, breaks = 200, main = "Adams Tunnel Diversion distribution", xlab = "AF diverted"))
 
 
 ### Examine non-normal data closely ###

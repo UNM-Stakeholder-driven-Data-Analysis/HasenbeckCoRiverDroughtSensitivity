@@ -49,7 +49,7 @@ write_csv(CombinedData,file = "data/processed/DiversionsANDSWSI")
 
 CombinedData <- read_csv("data/processed/DiversionsANDSWSI", )
   
-
+View(CombinedData)
 #### linear model (no random effects) ####
 
 ## plot the data ####
@@ -120,26 +120,68 @@ post_hoc_penguins$emmeans %>%
   ylab("Body Mass") + theme_bw()
 
 
+#### Adams Tunnel Only#### 
+# create the linear model
+#response variable 
+AdamsOnly <-
+  CombinedData %>%
+  group_by(basin,Structure) 
+
+AdamsOnlyColorado <- AdamsOnly %>%
+  filter()
 
 
-#### snowpack example #####
-## using linear mixed models
-
-# get snow sites and their elevation
-snow_sites <- 
-  read_csv("data/snowdepthsites.csv") %>%
-  separate(site_name, into = c("Site", "Station"), sep = " \\(") %>% #clean site and statino so they match the dataset
-  mutate(Station = str_replace(Station, pattern = "\\)", "")) %>%
-  rename(elevation = `elev (ft)`) %>%  # clean up elevation column
-  select(Site, Station, elevation) %>%
-  mutate(Site = str_replace(Site, "PanchueLa", "Panchuela"))
+View(AdamsOnly)
+linearmodel <- lm(Amount ~ SWSI * basin, data = AdamsOnly, na.action=na.omit)
+plot(linearmodel) # check assumptions
 
 
+# run type 3 ANOVA
+Anova(linearmodel, type = 3)
 
-snowpack <- 
-  read_csv("data/historicmonthlysnowdepth.csv") %>%
-  rename(Year = `Water Year`) %>%
-  select(Site, Station, Year, Feb_2) %>%
-  drop_na()
+m1 <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit) #does not fit
+m2 <- lm(Amount ~ SWSI + basin, data = CombinedData, na.action=na.omit) #does not fit
+m3 <- lm(Amount ~ basin, data = CombinedData, na.action=na.omit) #does not fit
+m4 <- lm(Amount ~ SWSI, data = CombinedData, na.action=na.omit) #does not fit 
+null <- lm(Amount ~  1, data = CombinedData, na.action=na.omit) #does not fit 
+
+plot(m1)
+plot(m2)
+plot(m3)
+plot(m4)
+plot(null)
+
+AICc(m1, m2, m3, m4, null)
+#
+#df     AICc
+#m1   15 285500.2
+#m2    9 285499.5
+#m3    8 285612.2
+#m4    3 285488.9 **
+#null  2 291178.0
+
+anova(m1, m4)
+#I'm not sure what this means? 
+
+#post-hoc test
+CombinedData %>%
+  select(basin, Amount, SWSI) %>%
+  drop_na() %>%
+  ggplot(aes(x = SWSI, y = Amount)) + 
+  geom_boxplot() + facet_grid(~basin)
+
+
+# tukey test comparing species for females and for males
+emmeans(m1, pairwise ~ SWSI | basin)
+#Doesn't calculate :( 
+
+
+post_hoc_penguins <- emmeans(mass_species_m1, pairwise ~ species | sex)
+
+post_hoc_penguins$emmeans %>%
+  as.data.frame() %>%
+  ggplot(aes(x = species, y = emmean, color = sex)) + 
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 2) + 
+  ylab("Body Mass") + theme_bw()
 
 

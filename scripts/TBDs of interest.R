@@ -186,15 +186,7 @@ temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s
 (hist(temp$Amount, breaks = 100, main = "Blanco Diversion distribution", xlab = "AF diverted"))
 View(temp)
 
-#Hurdle model, #Use diversions as response variable. Sum diversions to add. Possibly sum the diversions by ddestination basin or end user 
-
-
-temp = dat_r[dat_r$Structure == "USBR BLANCO R DIVERSION",]
-qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
-temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize
-(hist(temp$Amount, breaks = 100, main = "Blanco Diversion distribution", xlab = "AF diverted"))
-View(temp)
-
+#Hurdle model, #Use diversions as response variable. Sum diversions to add. Possibly sum the diversions by destination basin or end user 
 
 
 temp = dat_r[dat_r$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
@@ -205,7 +197,7 @@ hist(temp$Amount, breaks = 100)
 temp = dat_r[dat_r$Structure == "USBR NAVAJO DIVERSION",]
 temp <- subset(temp, Amount != 0) 
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed 
-
+hist(temp$Amount, breaks = 200)
 
 temp = dat_r[dat_r$Structure == "CBT ALVA B ADAMS TUNNEL",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # normal

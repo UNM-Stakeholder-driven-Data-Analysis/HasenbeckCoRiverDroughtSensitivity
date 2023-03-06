@@ -127,8 +127,11 @@ AdamsOnly <-
   CombinedData %>%
   group_by(basin,Structure) 
 
-AdamsOnlyColorado <- AdamsOnly %>%
-  filter()
+
+AdamsOnly$basin = AdamsOnly[AdamsOnly$basin == "Colorado"]
+
+AdamsOnly$basin = as.factor(AdamsOnly$basin)
+
 
 
 View(AdamsOnly)

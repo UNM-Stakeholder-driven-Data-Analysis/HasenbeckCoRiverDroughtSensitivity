@@ -173,7 +173,7 @@ ggplot(data=dat, aes(x=doy, y=dat$Amount, color=Structure))+
   xlab("Day of Year") + # for the x axis label
   ylab("Amount Diverted") # for the y axis label
 
-#### check distributions: CBT is normal. Others are 0-inflated. Maybe minimum extreme.  ####
+#### check distributions: CBT is normal. Others are 0-inflated.  ####
 
 dat_r = 
   dat %>% 
@@ -185,6 +185,17 @@ qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
 temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize
 (hist(temp$Amount, breaks = 100, main = "Blanco Diversion distribution", xlab = "AF diverted"))
 View(temp)
+
+#Hurdle model, #Use diversions as response variable. Sum diversions to add. Possibly sum the diversions by ddestination basin or end user 
+
+
+temp = dat_r[dat_r$Structure == "USBR BLANCO R DIVERSION",]
+qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
+temp <- subset(temp, Amount != 0) #Run this to see curve without 0s. removing 0s does not normalize
+(hist(temp$Amount, breaks = 100, main = "Blanco Diversion distribution", xlab = "AF diverted"))
+View(temp)
+
+
 
 temp = dat_r[dat_r$Structure == "FRY ARK PR BOUSTEAD TUNNEL",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
@@ -199,6 +210,7 @@ qqPlot(temp$Amount); shapiro.test(temp$Amount) # NOT normal - right skewed
 temp = dat_r[dat_r$Structure == "CBT ALVA B ADAMS TUNNEL",]
 qqPlot(temp$Amount); shapiro.test(temp$Amount) # normal
 (hist(temp$Amount, breaks = 200, main = "Adams Tunnel Diversion distribution", xlab = "AF diverted"))
+
 
 
 ### Examine non-normal data closely ###

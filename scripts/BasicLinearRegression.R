@@ -123,19 +123,16 @@ post_hoc_penguins$emmeans %>%
 #### Adams Tunnel Only#### 
 # create the linear model
 #response variable 
-AdamsOnly <-
+AdamsOnly_Colorado <-
   CombinedData %>%
-  group_by(basin,Structure) 
+  group_by(basin,Structure) %>%
+  filter(basin == "Colorado" & "South_Platte")
 
-
-AdamsOnly$basin = AdamsOnly[AdamsOnly$basin == "Colorado"]
-
-AdamsOnly$basin = as.factor(AdamsOnly$basin)
-
-
-
+?filter
 View(AdamsOnly)
-linearmodel <- lm(Amount ~ SWSI * basin, data = AdamsOnly, na.action=na.omit)
+
+linearmodel <- lm(Amount ~ SWSI * basin, data = AdamsOnly_Colorado, na.action=na.omit)
+
 plot(linearmodel) # check assumptions
 
 

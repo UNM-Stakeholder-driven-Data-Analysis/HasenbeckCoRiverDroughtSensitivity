@@ -126,12 +126,14 @@ post_hoc_penguins$emmeans %>%
 AdamsOnly_Colorado <-
   CombinedData %>%
   group_by(basin,Structure) %>%
-  filter(basin == "Colorado" & "South_Platte")
+  filter(basin == c("Colorado","South_Platte"))
 
 ?filter
-View(AdamsOnly)
+View(AdamsOnly_Colorado)
 
 linearmodel <- lm(Amount ~ SWSI * basin, data = AdamsOnly_Colorado, na.action=na.omit)
+
+
 
 plot(linearmodel) # check assumptions
 

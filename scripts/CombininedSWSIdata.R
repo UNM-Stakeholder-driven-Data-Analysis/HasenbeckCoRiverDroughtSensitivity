@@ -89,8 +89,8 @@ SWSIdataexplore <- pivot_longer(SWSI1981to2023dataexplore,
 #tibble converted to df 
 
 SWSIdataexplore <- as.data.frame(SWSIdataexplore)
-  
-  
+
+View(SWSI1981to2023)
 
 #convert new column to factor 
 SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)

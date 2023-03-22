@@ -16,15 +16,26 @@ Azotea1970 <- read.table(file = "data/raw/AzoteaUSGS1975-2008-column.csv",sep=";
 read_csv(file = "data/raw/AzoteaUSGS1975-2008.csv") #From USGS, older diversion record
 Azotea2023 <- read_csv(file = "data/raw/Azotea Discharge - 1985-2023.csv", ) #From CO DWR, more recent record
 
-View(Azotea1970)
-View(Azotea2023)
-
+####Cleaning Data ####
+## Cleaning 1970 data 
 Clean1970 <- Azotea1970 %>% 
   select(datetime,X99716_00060_00003) %>% #Selecting relevant columns
   rename(Discharge = X99716_00060_00003, 
-         date_measured = datetime)
+         date_measured = datetime) #renaming columns so they make sense
 
-View(Clean1970)
+Clean1970$date_measured = as.Date(Clean1970$date_measured, format="%m/%d/%y") #formatting date
+as.double(Clean1970$Discharge) #defining data 
 
-Clean1970$`Obs Code`[AllTBDiversions$`Obs Code` == "M"] <- "modeled"   # model
+##cleaning 2023 data 
+Clean2023 <- Azotea2023 %>% 
+  select(meas_date,`Streamflow Value`) %>% #selecting relevant columns
+  rename(date_measured = meas_date,
+         Discharge = `Streamflow Value`) #renaming columns so they make sense 
+
+Clean2023$date_measured = as.Date(Clean2023$date_measured, format="%m/%d/%Y") #formatting date
+as.double(Clean2023$Discharge)
+
+##Joining both data sets 
+
+
 

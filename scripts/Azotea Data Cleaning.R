@@ -12,9 +12,8 @@ library(lubridate)
 ####Reading in csv data####
 
 Azotea1970 <- read.table(file = "data/raw/AzoteaUSGS1975-2008-column.csv",sep=";", header=TRUE) #From USGS, older diversion record
-    
-read_csv(file = "data/raw/AzoteaUSGS1975-2008.csv") #From USGS, older diversion record
-Azotea2023 <- read_csv(file = "data/raw/Azotea Discharge - 1985-2023.csv", ) #From CO DWR, more recent record
+
+Azotea2023 <- read_csv(file = "data/raw/Azotea Discharge - 1985-2023.csv",) #From CO DWR, more recent record
 
 ####Cleaning Data ####
 ## Cleaning 1970 data 

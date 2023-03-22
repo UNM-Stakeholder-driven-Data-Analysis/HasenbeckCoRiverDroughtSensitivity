@@ -22,8 +22,6 @@ SWSI <- SWSI %>%
                values_to = "SWSI")
 
 
-view(Diversions)
-
 #Joining data 
 Diversions = 
   Diversions %>%
@@ -69,6 +67,7 @@ CombinedData %>%
 #response variable 
 linearmodel <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit)
 plot(linearmodel) # check assumptions
+
 
 
 # run type 3 ANOVA

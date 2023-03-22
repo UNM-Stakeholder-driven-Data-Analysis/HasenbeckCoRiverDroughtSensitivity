@@ -1,6 +1,6 @@
 #### Read me ####
 
-#This script prepares data to be analyzed in simpler linear regression, then plots it. 
+#This script prepares San Juan Chama data to be analyzed in a simpler linear regression, then plots it. 
 
 ####Libraries#### 
 library(readr)

@@ -15,16 +15,85 @@ library(emmeans) # for emmeans, emtrends, all the post hoc tests and plotting
 ####Read in data#### 
 
 AzoteaDiversions <- read_csv(file = "data/processed/AzoteaMonthlyDischarge")
-HeronReleases <- read_csv(file="data/processed/HeronMonthlyReleases")
-SWSI <- read_csv(file= "data/processed/SWSI1981to2023.csv")
+HeronReleases <- read_csv(file="data/processed/HeronMonthlyReleases") %>% 
+  rename(Discharge = Release) #Renaming columns to same name as header in Tunnel data so I can recycle code more easily later
+AllSWSI <- read_csv(file= "data/processed/SWSI1981to2023.csv")
 
-#### Prepping SWSI Data #### 
 
-SWSI_Colorado <- SWSI %>% 
-  select(Date,Colorado)
+#### Prepping Data for Regression #### 
 
-SWSI_RG <- SWSI %>% 
-  select(Date,Rio_Grande)
+SWSI_Colorado <- AllSWSI %>% #Creating dfs by basin
+  select(Date,Colorado) %>% 
+  rename(SWSI = Colorado) #rename column to logical name 
+
+SWSI_RG <- AllSWSI %>% #Creating dfs by basin
+  select(Date,Rio_Grande) %>%
+  rename(SWSI = Rio_Grande) #rename column to logical name
+
+
+Azotea_RG <- full_join(AzoteaDiversions,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data 
+Azotea_CO <- full_join(AzoteaDiversions,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data 
+Heron_RG <- full_join(HeronReleases,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data 
+Heron_CO <- full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data 
+
+
+#### Azotea Tunnel and Rio Grande SWSI ALEX LOOK HERE THIS IS THE AREA WHERE I NEED HELP ####
+
+#Set dataframes 
+Discharge <- AzoteaDiversions
+CombinedData <- Azotea_RG
+SWSI <- SWSI_RG
+
+## plot the data ###
+
+CombinedData %>%
+  ggplot(aes(x = Discharge, y = SWSI)) + 
+  geom_point()
+
+# create the linear model
+linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) ####I AM MIXED UP ON MY FORMULA HERE!! 
+plot(linearmodel) # check assumptions
+
+#Code from other linear model script: linearmodel <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit)
+
+# run type 3 ANOVA
+Anova(linearmodel, type = 3)
+
+m1 <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit) #does not fit
+m2 <- lm(Amount ~ SWSI + basin, data = CombinedData, na.action=na.omit) #does not fit
+m3 <- lm(Amount ~ basin, data = CombinedData, na.action=na.omit) #does not fit
+m4 <- lm(Amount ~ SWSI, data = CombinedData, na.action=na.omit) #does not fit 
+null <- lm(Amount ~  1, data = CombinedData, na.action=na.omit) #does not fit 
+
+plot(m1)
+plot(m2)
+plot(m3)
+plot(m4)
+plot(null)
+
+AICc(m1, m2, m3, m4, null)
+#
+#df     AICc
+#m1   15 285500.2
+#m2    9 285499.5
+#m3    8 285612.2
+#m4    3 285488.9 **
+#null  2 291178.0
+
+anova(m1, m4)
+#I'm not sure what this means? 
+
+#post-hoc test
+CombinedData %>%
+  select(basin, Amount, SWSI) %>%
+  drop_na() %>%
+  ggplot(aes(x = SWSI, y = Amount)) + 
+  geom_boxplot() + facet_grid(~basin)
+
+
+# tukey test comparing species for females and for males
+emmeans(m1, pairwise ~ SWSI | basin)
+#Doesn't calculate :( 
 
 
 

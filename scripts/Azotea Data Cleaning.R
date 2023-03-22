@@ -44,18 +44,16 @@ AzoteaJoin <- full_join(Clean2023, Clean1970)
 AzoteaJoin$yr = lubridate::year(AzoteaJoin$date_measured)# extract just the year
 AzoteaJoin$mo = lubridate::month(AzoteaJoin$date_measured) # extract just the month
 
-AzoteaMonthly$MonthlyDischarge <- AzoteaJoin %>% #Sum daily data into monthly
+AzoteaMonthly <- AzoteaJoin %>% #Sum daily data into monthly
   group_by(yr,mo) %>%
   summarize(MonthlyDischarge = sum(Discharge))
 
 AzoteaMonthly$Date = make_date(year = AzoteaMonthly$yr, month = AzoteaMonthly$mo, day = 1) #Re-format date column 
 
-AzoteaDischarge <- AzoteaMonthly %>%
-  select(MonthlyDischarge$MonthlyDischarge,Date) %>%
-  rename(Discharge = MonthlyDischarge$MonthlyDischarge)
+AzoteaDischarge <- AzoteaMonthly %>% #Select and rename relevant columns
+  ungroup() %>%
+  select(MonthlyDischarge,Date) %>%
+  rename(Discharge = MonthlyDischarge)
 
-view(AzoteaMonthly)
-
-
-View(AzoteaMonthly)
+write_csv(AzoteaDischarge,file = "data/processed/AzoteaMonthlyDischarge") #write to csv
 

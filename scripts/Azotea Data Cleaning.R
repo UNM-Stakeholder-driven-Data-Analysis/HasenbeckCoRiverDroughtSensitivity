@@ -8,6 +8,7 @@
 library(readr)
 library(tidyverse)
 library(lubridate)
+library(zoo) 
 
 ####Reading in csv data####
 
@@ -37,6 +38,17 @@ as.double(Clean2023$Discharge)
 ##Joining both data sets 
 
 AzoteaJoin <- full_join(Clean2023, Clean1970) 
+
+#Data has duplicates. These are going to be averaged. 
+ggplot(data=AzoteaJoin, aes(x=date_measured, y=Discharge))+
+  geom_point() +
+  xlim(c(as.Date("1985-01-01"), as.Date("2008-12-01")))+
+  theme(legend.title = element_blank()) +
+  theme_bw()
+
+sum(is.na(Clean2023$Discharge)) #206 NAs
+sum(is.na(Clean1970$Discharge)) #275 NAs
+
 
 ###Converting daily to monthly measurement
 

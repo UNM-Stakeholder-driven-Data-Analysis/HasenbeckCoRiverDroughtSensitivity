@@ -8,9 +8,6 @@ library(tidyverse)
 library(lubridate)
 
 ####Read in data ####
-HeronReleases <- read_csv(file = "data/raw/Reservoirs/Heron Reservoir and Dam Daily Lake_Reservoir Release - Total-cfs Time Series Data (2008-01-01 - 2023-03-15).csv")
-
-
 HeronReleases <- read.table(file = "data/raw/Reservoirs/Heron Reservoir and Dam Daily Lake_Reservoir Release - Total-cfs Time Series Data (2008-01-01 - 2023-03-15).csv",
          sep = ";", header=TRUE)
 

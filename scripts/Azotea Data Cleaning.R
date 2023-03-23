@@ -48,8 +48,14 @@ ggplot(data=AzoteaJoin, aes(x=date_measured, y=Discharge))+
 
 sum(is.na(Clean2023$Discharge)) #206 NAs
 sum(is.na(Clean1970$Discharge)) #275 NAs
+View(Clean1970) #NAs in 1983-1985
+View(Clean2023) #NAs in 2004,2002, 
 
 
+AzoteaJoinClean <- AzoteaJoin %>% group_by(date_measured) %>% 
+  summarise(across(c(Discharge), mean))
+
+View(AzoteaJoinClean)
 ###Converting daily to monthly measurement
 
 AzoteaJoin$yr = lubridate::year(AzoteaJoin$date_measured)# extract just the year

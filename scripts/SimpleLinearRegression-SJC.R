@@ -55,3 +55,45 @@ plot(linearmodel)
 
 #Code from other linear model script: linearmodel <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit)
 
+#### Azotea Tunnel and Colorado SWSI  ####
+
+#Set dataframes 
+Discharge <- AzoteaDiversions
+CombinedData <- Azotea_CO
+SWSI <- SWSI_Colorado
+
+## plot the data ###
+CombinedData %>%
+  ggplot(aes(x = Discharge, y = SWSI)) + 
+  geom_point()
+
+# create the linear model
+
+
+
+#### Heron Reservoir and Rio Grande SWSI  ####
+
+#Set dataframes 
+Discharge <- HeronReleases
+CombinedData <- Heron_RG
+SWSI <- SWSI_RG
+
+## plot the data ###
+CombinedData %>%
+  ggplot(aes(x = Discharge, y = SWSI)) + 
+  geom_point()
+
+# create the linear model
+#### Heron Reservoir and Colorado SWSI  ####
+
+#Set dataframes 
+Discharge <- HeronReleases
+CombinedData <- Heron_CO
+SWSI <- SWSI_Colorado
+
+## plot the data ###
+CombinedData %>%
+  ggplot(aes(x = Discharge, y = SWSI)) + 
+  geom_point()
+
+# create the linear model

@@ -19,7 +19,6 @@ HeronReleases <- read_csv(file="data/processed/HeronMonthlyReleases") %>%
   rename(Discharge = Release) #Renaming columns to same name as header in Tunnel data so I can recycle code more easily later
 AllSWSI <- read_csv(file= "data/processed/SWSI1981to2023.csv")
 
-
 #### Prepping Data for Regression #### 
 
 SWSI_Colorado <- AllSWSI %>% #Creating dfs by basin

@@ -37,7 +37,7 @@ Heron_RG <- full_join(HeronReleases,SWSI_RG, by = "Date") #Combining SWSI by bas
 Heron_CO <- full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data - Heron Res, CO SWSI
 
 
-#### Azotea Tunnel and Rio Grande SWSI ALEX LOOK HERE THIS IS THE AREA WHERE I NEED HELP ####
+#### Azotea Tunnel and Rio Grande SWSI####
 
 #Set dataframes 
 Discharge <- AzoteaDiversions
@@ -50,10 +50,9 @@ CombinedData %>%
   geom_point()
 
 # create the linear model
-linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) ####I AM MIXED UP ON MY FORMULA HERE!! 
-plot(linearmodel) 
+linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) 
+plot(linearmodel) #Azotea and RG SWSI model 
 
-#Code from other linear model script: linearmodel <- lm(Amount ~ SWSI * basin, data = CombinedData, na.action=na.omit)
 
 #### Azotea Tunnel and Colorado SWSI  ####
 
@@ -68,7 +67,8 @@ CombinedData %>%
   geom_point()
 
 # create the linear model
-
+linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) 
+plot(linearmodel) #Azotea and CO SWSI model 
 
 
 #### Heron Reservoir and Rio Grande SWSI  ####
@@ -84,6 +84,9 @@ CombinedData %>%
   geom_point()
 
 # create the linear model
+linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) 
+plot(linearmodel) #Heron and RG SWSI
+
 #### Heron Reservoir and Colorado SWSI  ####
 
 #Set dataframes 
@@ -97,3 +100,6 @@ CombinedData %>%
   geom_point()
 
 # create the linear model
+linearmodel <- lm(Discharge ~ SWSI, data = CombinedData, na.action=na.omit) 
+plot(linearmodel) #Heron and COlorado SWSI
+

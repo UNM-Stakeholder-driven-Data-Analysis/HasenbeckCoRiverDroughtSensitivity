@@ -21,10 +21,14 @@ Azotea2023 <- read_csv(file = "data/raw/Azotea Discharge - 1985-2023.csv",) #Fro
 Clean1970 <- Azotea1970 %>% 
   select(datetime,X99716_00060_00003) %>% #Selecting relevant columns
   rename(Discharge = X99716_00060_00003, 
-         date_measured = datetime) #renaming columns so they make sense
+         date_measured = datetime)  #renaming columns so they make sense
+
 
 Clean1970$date_measured = as.Date(Clean1970$date_measured, format="%m/%d/%y") #formatting date
 as.double(Clean1970$Discharge) #defining data 
+
+Clean1970 <- Clean1970 %>% filter(date_measured <= "1985-12-02") #Removing data after 1985. Post-1985 data will be DWR data. 
+
 
 ##cleaning 2023 data 
 Clean2023 <- Azotea2023 %>% 
@@ -37,25 +41,9 @@ as.double(Clean2023$Discharge)
 
 ##Joining both data sets 
 
-AzoteaJoin <- full_join(Clean2023, Clean1970) 
-
-#Data has duplicates. These are going to be averaged. 
-ggplot(data=AzoteaJoin, aes(x=date_measured, y=Discharge))+
-  geom_point() +
-  xlim(c(as.Date("1985-01-01"), as.Date("2008-12-01")))+
-  theme(legend.title = element_blank()) +
-  theme_bw()
-
-sum(is.na(Clean2023$Discharge)) #206 NAs
-sum(is.na(Clean1970$Discharge)) #275 NAs
-View(Clean1970) #NAs in 1983-1985
-View(Clean2023) #NAs in 2004,2002, 
+AzoteaJoin <- full_join(Clean2023,Clean1970) 
 
 
-AzoteaJoinClean <- AzoteaJoin %>% group_by(date_measured) %>% 
-  summarise(across(c(Discharge), mean))
-
-View(AzoteaJoinClean)
 ###Converting daily to monthly measurement
 
 AzoteaJoin$yr = lubridate::year(AzoteaJoin$date_measured)# extract just the year

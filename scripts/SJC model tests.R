@@ -131,7 +131,7 @@ AIC(mod.hurdle)
 AIC(mod.hurdle.nb) # lower is better
 #[1] 7264.124
 
-#### Heron and CO SWSI Hurdle - AIC Hurdle NB: 3019.524 #### 
+#### Heron and CO SWSI Hurdle - Hurdle NB AIC : 3019.524 #### 
 CombinedData <-  full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
@@ -241,3 +241,4 @@ AIC(m1)
 #[1] 754015.6
 AIC(fit1) # lower is better, slightly better than Hurdle-NB 
 #[1] 3010.959
+

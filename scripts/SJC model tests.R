@@ -36,11 +36,10 @@ SWSI_RG <- AllSWSI %>% #Creating dfs by basin
   dplyr::select(Date,Rio_Grande) %>%
   rename(SWSI = Rio_Grande) #rename column to logical name
 
-####Azotea and both SWSI Poisson ####
+####Azotea and both SWSI Poisson: Not Useful ####
 #resource and code: https://data.library.virginia.edu/getting-started-with-hurdle-models/
 
 Azotea_CO_RG <- full_join(AzoteaDiversions,SWSI_CORG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-
 
 CombinedData <- Azotea_CO_RG
 CombinedData$Discharge = as.integer(CombinedData$Discharge)
@@ -79,30 +78,107 @@ mod.hurdle.nb2 <- hurdle(Discharge ~ . | basin + SWSI,
                          data = CombinedData, dist = "negbin")
 rootogram(mod.hurdle.nb2)
 
-#### Azotea and RG SWSI Hurdle #### 
-mod.hurdle <- hurdle(Discharge ~ SWSI, data = CombinedData)
+#### Azotea and CO SWSI Hurdle #### 
+CombinedData <-  full_join(AzoteaDiversions,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
+mod.hurdle <- hurdle(Discharge ~ SWSI, data = CombinedData)
 summary(mod.hurdle)
 sum(predict(mod.hurdle, type = "prob",na.rm=T)[,1])
-#[1] 140
+#[1] 70
 
 sum(CombinedData$Discharge < 1, na.rm=T)
-#156
+#82
 
 # First 5 expected counts
 predict(mod.hurdle, type = "response")[1:5]
 
-rootogram(mod.hurdle) # plot
+rootogram(mod.hurdle) # plot - above the line on far positive. 
 
 #negative bionomial distribution: 
 mod.hurdle.nb <- hurdle(Discharge ~ ., data = CombinedData, dist = "negbin")
 rootogram(mod.hurdle.nb) #plot
 
 AIC(mod.hurdle)
-#[1] 6519198
+#[1] 3296987
 AIC(mod.hurdle.nb) # lower is better
-#[1] 14525.27
+#[1] 7265.739
 
-mod.hurdle.nb2 <- hurdle(Discharge ~ . | basin + SWSI, 
-                         data = CombinedData, dist = "negbin")
-rootogram(mod.hurdle.nb2)
+
+#### Azotea and RG SWSI Hurdle #### 
+CombinedData <- full_join(AzoteaDiversions,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+mod.hurdle <- hurdle(Discharge ~ SWSI, data = CombinedData)
+summary(mod.hurdle)
+sum(predict(mod.hurdle, type = "prob",na.rm=T)[,1])
+#[1] 70
+
+sum(CombinedData$Discharge < 1, na.rm=T)
+#82
+
+# First 5 expected counts
+predict(mod.hurdle, type = "response")[1:5]
+
+rootogram(mod.hurdle) # plot - above the line on far positive. 
+
+#negative bionomial distribution: 
+mod.hurdle.nb <- hurdle(Discharge ~ ., data = CombinedData, dist = "negbin")
+rootogram(mod.hurdle.nb) #plot
+
+AIC(mod.hurdle)
+#[1] 3205061
+AIC(mod.hurdle.nb) # lower is better
+#[1] 7264.124
+
+#### Heron and CO SWSI Hurdle #### 
+CombinedData <-  full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+mod.hurdle <- hurdle(Discharge ~ SWSI, data = CombinedData)
+summary(mod.hurdle)
+sum(predict(mod.hurdle, type = "prob",na.rm=T)[,1])
+#[1] 37
+
+sum(CombinedData$Discharge < 1, na.rm=T)
+#37
+
+# First 5 expected counts
+predict(mod.hurdle, type = "response")[1:5]
+
+rootogram(mod.hurdle) # plot - good match???  
+
+#negative bionomial distribution: 
+mod.hurdle.nb <- hurdle(Discharge ~ ., data = CombinedData, dist = "negbin") 
+rootogram(mod.hurdle.nb) #plot - still a good match??? 
+
+AIC(mod.hurdle)
+#[1] 791204.9
+AIC(mod.hurdle.nb) # lower is better
+#[1] 3019.524
+
+#### Heron and RG SWSI Hurdle #### 
+CombinedData <- full_join(HeronReleases,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+mod.hurdle <- hurdle(Discharge ~ SWSI, data = CombinedData)
+summary(mod.hurdle)
+sum(predict(mod.hurdle, type = "prob",na.rm=T)[,1])
+#[1] 37
+
+sum(CombinedData$Discharge < 1, na.rm=T)
+#37
+
+# First 5 expected counts
+predict(mod.hurdle, type = "response")[1:5]
+
+rootogram(mod.hurdle) # plot - above the line on far positive. 
+
+#negative bionomial distribution: 
+mod.hurdle.nb <- hurdle(Discharge ~ ., data = CombinedData, dist = "negbin")
+rootogram(mod.hurdle.nb) #plot - good match?? 
+
+AIC(mod.hurdle)
+#[1] 754015.6
+AIC(mod.hurdle.nb) # lower is better
+#[1] 3014.499

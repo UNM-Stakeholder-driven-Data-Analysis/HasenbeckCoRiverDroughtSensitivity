@@ -35,7 +35,7 @@ SWSI_CORG <- AllSWSI %>% #Creating dfs by basin
                 names_to = "basin",
                 values_to = "SWSI")
                
-?pivot_longer
+
 View(SWSI_CORG)
 #### Azotea Tunnel and both SWSI####
 

@@ -8,7 +8,7 @@ library(tidyverse)
 library(lubridate)
 
 library(AER) #Poisson Model Package
-library(pscl) #Hurdle Model package 
+library(pscl) #Hurdle and ZIP Model package 
 # For Hurdle Plotting: Need to install from R-Forge instead of CRAN
 install.packages("countreg", repos="http://R-Forge.R-project.org")
 library(countreg)
@@ -36,7 +36,7 @@ SWSI_RG <- AllSWSI %>% #Creating dfs by basin
   dplyr::select(Date,Rio_Grande) %>%
   rename(SWSI = Rio_Grande) #rename column to logical name
 
-####Azotea and both SWSI Poisson: Not Useful ####
+####Azotea and both SWSI Poisson: Not Useful, ignore this section ####
 #resource and code: https://data.library.virginia.edu/getting-started-with-hurdle-models/
 
 Azotea_CO_RG <- full_join(AzoteaDiversions,SWSI_CORG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
@@ -78,7 +78,7 @@ mod.hurdle.nb2 <- hurdle(Discharge ~ . | basin + SWSI,
                          data = CombinedData, dist = "negbin")
 rootogram(mod.hurdle.nb2)
 
-#### Azotea and CO SWSI Hurdle #### 
+#### Azotea and CO SWSI Hurdle - HUrdle nb AIC: 7265.739 #### 
 CombinedData <-  full_join(AzoteaDiversions,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
@@ -105,7 +105,7 @@ AIC(mod.hurdle.nb) # lower is better
 #[1] 7265.739
 
 
-#### Azotea and RG SWSI Hurdle #### 
+#### Azotea and RG SWSI Hurdle - Hurdle NB AIC: 7264.124 #### 
 CombinedData <- full_join(AzoteaDiversions,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
@@ -131,7 +131,7 @@ AIC(mod.hurdle)
 AIC(mod.hurdle.nb) # lower is better
 #[1] 7264.124
 
-#### Heron and CO SWSI Hurdle #### 
+#### Heron and CO SWSI Hurdle - AIC Hurdle NB: 3019.524 #### 
 CombinedData <-  full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
@@ -157,7 +157,7 @@ AIC(mod.hurdle)
 AIC(mod.hurdle.nb) # lower is better
 #[1] 3019.524
 
-#### Heron and RG SWSI Hurdle #### 
+#### Heron and RG SWSI Hurdle - Hudle-NB AIC: 3014.499 #### 
 CombinedData <- full_join(HeronReleases,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
 
@@ -182,3 +182,62 @@ AIC(mod.hurdle)
 #[1] 754015.6
 AIC(mod.hurdle.nb) # lower is better
 #[1] 3014.499
+
+
+
+#### Azotea and CO SWSI ZIP - ZIP-nb AIC: 7262.926 #### 
+CombinedData <-  full_join(AzoteaDiversions,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+#ZIP 
+summary(m1 <- zeroinfl(Discharge ~ SWSI, data = CombinedData)) #ZIP Model 
+
+## More ZIP-NB trying: 
+summary(fit1 <- zeroinfl((Discharge ~ SWSI),data = CombinedData,dist="negbin",link="logit"))
+
+AIC(m1)
+#[1] 3296987
+AIC(fit1) # lower is better, slightly better than Hurdle-NB 
+#[1] 7262.926
+#### Azotea and RG SWSI ZIP - Zip-NB AIC: 7260.705 #### 
+CombinedData <-  full_join(AzoteaDiversions,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+#ZIP 
+summary(m1 <- zeroinfl(Discharge ~ SWSI, data = CombinedData)) #ZIP Model 
+
+## More ZIP-NB trying: 
+summary(fit1 <- zeroinfl((Discharge ~ SWSI),data = CombinedData,dist="negbin",link="logit"))
+
+AIC(m1)
+#[1] 3205061
+AIC(fit1) # lower is better, slightly better than Hurdle-NB 
+#[1] 7260.705
+#### Heron and CO SWSI ZIP - ZIP-nb AIC: 3016.394#### 
+CombinedData <-  full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+#ZIP 
+summary(m1 <- zeroinfl(Discharge ~ SWSI, data = CombinedData)) #ZIP Model 
+
+## More ZIP-NB trying: 
+summary(fit1 <- zeroinfl((Discharge ~ SWSI),data = CombinedData,dist="negbin",link="logit"))
+
+AIC(m1)
+#[1] 791204.9
+AIC(fit1) # lower is better, slightly better than Hurdle-NB 
+#[1] 3016.394
+#### Heron and RG SWSI ZIP - ZIP-nb AIC: 3010.959#### 
+CombinedData <-  full_join(HeronReleases,SWSI_RG, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types
+
+#ZIP 
+summary(m1 <- zeroinfl(Discharge ~ SWSI, data = CombinedData)) #ZIP Model 
+
+## More ZIP-NB trying: 
+summary(fit1 <- zeroinfl((Discharge ~ SWSI),data = CombinedData,dist="negbin",link="logit"))
+
+AIC(m1)
+#[1] 754015.6
+AIC(fit1) # lower is better, slightly better than Hurdle-NB 
+#[1] 3010.959

@@ -85,6 +85,8 @@ mod.hurdle.nb2 <- hurdle(Discharge ~ SWSI | basin + SWSI,
                          data = CombinedData, dist = "negbin")
 rootogram(mod.hurdle.nb2)
 
+View(AzoteaDiversions)
+
 #### Azotea and CO SWSI Hurdle - HUrdle nb AIC: 7261.97 #### 
 CombinedData <-  full_join(AzoteaDiversions,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge)#Set data types

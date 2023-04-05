@@ -10,8 +10,18 @@ library(lubridate)
 library(AER) #Poisson Model Package
 library(pscl) #Hurdle and ZIP Model package 
 # For Hurdle Plotting: Need to install from R-Forge instead of CRAN
-install.packages("countreg", repos="http://R-Forge.R-project.org")
+#install.packages("countreg", repos="http://R-Forge.R-project.org")
 library(countreg)
+
+library(forecast)
+library(MARSS)
+library(nlme)
+library(zoo)
+library(beepr)
+library(gridExtra)
+library(lme4)
+library(car)
+library(visreg)
 
 ####Read in data#### 
 
@@ -27,20 +37,51 @@ SWSI_CORG <- AllSWSI %>% #Creating dfs by basin
   pivot_longer(cols = "Rio_Grande":"Colorado", 
                names_to = "basin",
                values_to = "SWSI")
-
 SWSI_CORG$SWSI = as.numeric(SWSI_CORG$SWSI) # Set data type
 
 
 SWSI_Colorado <- AllSWSI %>% #Creating dfs by basin
   dplyr::select(Date,Colorado) %>% 
   rename(SWSI = Colorado) #rename column to logical name 
-
 SWSI_Colorado$SWSI = as.numeric(SWSI_Colorado$SWSI) # Set data type
 
 SWSI_RG <- AllSWSI %>% #Creating dfs by basin
   dplyr::select(Date,Rio_Grande) %>%
   rename(SWSI = Rio_Grande) #rename column to logical name
 SWSI_RG$SWSI = as.numeric(SWSI_RG$SWSI) # Set data type
+
+sum(is.na(SWSI_CORG))
+#0
+sum(is.na(HeronReleases))
+#3
+sum(is.na(AzoteaDiversions))/nrow(AzoteaDiversions)*100
+#46
+View(AzoteaDiversions)
+####Azotea and CO LME w temporal autocorrelation#####
+
+
+## fill gaps with spline interpolation ##
+# for calculating long-term trends, you can be pretty liberal with how large of gaps you fill. However, if you go too big with a spline interpolation, you'll get wacky results (ALWAYS EXAMINE THE RESULTS OF GAP FILLING!!). To strike this balance, I'm filling gaps of up to five days here. 
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+
+# Apply NA interpolation method
+plot(AzoteaDiversions)
+Azotea_fill <- AzoteaDiversions
+Azotea_fill$Discharge = na.spline(AzoteaDiversions$Discharge, na.rm = T, maxgap = 2)
+View(Azotea_fill)
+Azotea_fill$Discharge[Azotea_fill$Discharge < 0] = 0 
+
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to df
+
+RG_abq_filled$datetimeNM = RG_abq_Q_reg$datetimeNM
+names(RG_abq_filled) = c(colnames(RG_abq_Q_reg)[2],colnames(RG_abq_Q_reg)[1])
+RG_abq_filled = RG_abq_filled %>% select(datetimeNM, Q_cfs)
+# check NAs that are left
+sum(is.na(RG_abq_filled$Q_cfs))
+sum(is.na(RG_abq_filled$Q_cfs))/length(RG_abq_filled$Q_cfs) * 100
+# I've filled ~1% of dataset gaps with spline interpolation - report this in results!
+
 
 ####Azotea and both SWSI Poisson: Not Useful, ignore this section ####
 #resource and code: https://data.library.virginia.edu/getting-started-with-hurdle-models/

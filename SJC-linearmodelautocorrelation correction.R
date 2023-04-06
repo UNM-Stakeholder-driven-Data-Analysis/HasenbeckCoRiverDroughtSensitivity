@@ -106,7 +106,7 @@ ggplot(SWSI_DEs, aes(x=Date, y=SWSI_values, color = ))+
   geom_path() + geom_point() + theme_bw()
 
 
-#### Azotea ### 
+#### Azotea - Create time series and remove seasonality ####
 ## load data and format date/time ##
 AzoteaDiversions <- read_csv(file = "data/processed/AzoteaMonthlyDischarge")
 View(AzoteaDiversions)
@@ -150,8 +150,6 @@ View(Azotea_filled)
 sum(is.na(Azotea_filled$Date))
 #No more NAs. 
 
-#### create time series ####
-
 # need to do this to prep for removing seasonality
 #set df:
 Discharge_data <- Azotea_filled
@@ -163,7 +161,7 @@ head(timeseries)
 par(mfrow=c(1,1))
 plot(timeseries)
 
-#### remove seasonality ####
+### remove seasonality ###
 
 # examine seasonality
 par(mfrow=c(3,1))
@@ -200,3 +198,234 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
+
+
+
+#### Heron - Create time series and remove seasonality ####
+## load data and format date/time ##
+HeronReleases <- read_csv(file = "data/processed/HeronMonthlyReleases") %>%
+  rename("Discharge" = "Release")
+View(HeronReleases)
+
+HeronReleases$Date = as.Date(HeronReleases$Date, "%y-%m-%d")
+
+## prep time series ##
+sum(is.na(HeronReleases$Date))
+#No NAs
+
+sum(is.na(HeronReleases$Discharge))
+#2 NAs
+
+# check percentage of dataset with NAs - this is important to document!
+sum(is.na(HeronReleases))/nrow(HeronReleases)*100
+#1%
+
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+
+# Make univariate zoo time series #
+ts.temp<-read.zoo(HeronReleases, index.column=2, format="%Y-%m-%d")
+
+# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
+plot(ts.temp)
+# Apply NA interpolation method
+Heron_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
+plot(Heron_filled)
+
+#Converting negative values to 0. 
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to df
+Heron_filled = as.data.frame(Heron_filled)
+Heron_filled$Date = HeronReleases$Date
+names(Heron_filled) = c(colnames(HeronReleases)[1],colnames(HeronReleases)[2])
+Heron_filled = Heron_filled %>% dplyr::select(Discharge, Date)
+View(Heron_filled)
+# check NAs that are left
+sum(is.na(Heron_filled$Date))
+#No more NAs. 
+
+# need to do this to prep for removing seasonality
+#set df:
+Discharge_data <- Heron_filled
+
+timeseries = ts(Discharge_data$Discharge, start = c(2008-01-01), frequency = 12)
+
+head(timeseries)
+
+par(mfrow=c(1,1))
+plot(timeseries)
+
+### remove seasonality ###
+
+# examine seasonality
+par(mfrow=c(3,1))
+plot(timeseries)
+Acf(timeseries)
+Pacf(timeseries)
+
+# decompose into additive components
+plot(decompose(timeseries))
+# decompose into multiplicative components
+plot(decompose(timeseries, type="multiplicative"))
+# extract components from multiplicative
+timeseries_decomp = decompose(timeseries, type="multiplicative")
+timeseries_trend = timeseries_decomp$trend
+timeseries_remainder = timeseries_decomp$random
+# save de-seasoned ts
+timeseries_DEs = timeseries_trend * timeseries_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_DEs)
+Acf(timeseries)
+Acf(timeseries_DEs)
+Pacf(timeseries)
+Pacf(timeseries_DEs)
+
+# revert back to df
+Discharge_data_DEs = as.data.frame(timeseries_DEs)
+Discharge_data_DEs$Date = Discharge_data$Date
+names(Discharge_data_DEs) = c("Discharge","Date")
+Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
+Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
+
+ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+  geom_path() + geom_point() + theme_bw()
+
+
+
+#### CO SWSI - Create time series and remove seasonality ####
+## load data and format date/time ##
+SWSI_CO <- read_csv(file = "data/processed/SWSI1981to2023.csv") %>%
+  dplyr::select(Date,Colorado) %>%
+  rename("SWSI_values" = "Colorado")
+
+View(SWSI_CO)
+
+SWSI_CO$Date = as.Date(SWSI_CO$Date, "%y-%m-%d")
+
+## prep time series ##
+sum(is.na(SWSI_CO$Date))
+#No NAs
+
+sum(is.na(SWSI_CO$SWSI_values))
+#No NAs
+
+# need to do this to prep for removing seasonality
+#set df:
+SWSI_data <- SWSI_CO
+
+timeseries = ts(SWSI_data$SWSI_values, start = c(2008-01-01), frequency = 12)
+
+head(timeseries)
+
+par(mfrow=c(1,1))
+plot(timeseries)
+
+### remove seasonality ###
+
+# examine seasonality
+par(mfrow=c(3,1))
+plot(timeseries)
+Acf(timeseries)
+Pacf(timeseries)
+
+# decompose into additive components
+plot(decompose(timeseries))
+# decompose into multiplicative components
+plot(decompose(timeseries, type="multiplicative"))
+# extract components from multiplicative
+timeseries_decomp = decompose(timeseries, type="multiplicative")
+timeseries_trend = timeseries_decomp$trend
+timeseries_remainder = timeseries_decomp$random
+# save de-seasoned ts
+timeseries_DEs = timeseries_trend * timeseries_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_DEs)
+Acf(timeseries)
+Acf(timeseries_DEs)
+Pacf(timeseries)
+Pacf(timeseries_DEs)
+
+# revert back to df
+SWSI_data_DEs = as.data.frame(timeseries_DEs)
+SWSI_data_DEs$Date = SWSI_data$Date
+names(SWSI_data_DEs) = c("SWSI_values","Date")
+SWSI_data_DEs = SWSI_data_DEs %>% dplyr::select(Date, SWSI_values) %>% arrange(Date)
+SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
+
+ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
+  geom_path() + geom_point() + theme_bw()
+
+
+
+#### RG SWSI - Create time series and remove seasonality ####
+## load data and format date/time ##
+SWSI_RG <- read_csv(file = "data/processed/SWSI1981to2023.csv") %>%
+  dplyr::select(Date,Rio_Grande) %>%
+  rename("SWSI_values" = "Rio_Grande")
+
+
+SWSI_RG$Date = as.Date(SWSI_RG$Date, "%y-%m-%d")
+
+## prep time series ##
+sum(is.na(SWSI_RG$Date))
+#No NAs
+
+sum(is.na(SWSI_RG$SWSI_values))
+#No NAs
+
+# need to do this to prep for removing seasonality
+#set df:
+SWSI_data <- SWSI_RG
+
+timeseries = ts(SWSI_data$SWSI_values, start = c(2008-01-01), frequency = 12)
+
+head(timeseries)
+
+par(mfrow=c(1,1))
+plot(timeseries)
+
+### remove seasonality ###
+
+# examine seasonality
+par(mfrow=c(3,1))
+plot(timeseries)
+Acf(timeseries)
+Pacf(timeseries)
+
+# decompose into additive components
+plot(decompose(timeseries))
+# decompose into multiplicative components
+plot(decompose(timeseries, type="multiplicative"))
+# extract components from multiplicative
+timeseries_decomp = decompose(timeseries, type="multiplicative")
+timeseries_trend = timeseries_decomp$trend
+timeseries_remainder = timeseries_decomp$random
+# save de-seasoned ts
+timeseries_DEs = timeseries_trend * timeseries_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_DEs)
+Acf(timeseries)
+Acf(timeseries_DEs)
+Pacf(timeseries)
+Pacf(timeseries_DEs)
+
+# revert back to df
+SWSI_data_DEs = as.data.frame(timeseries_DEs)
+SWSI_data_DEs$Date = SWSI_data$Date
+names(SWSI_data_DEs) = c("SWSI_values","Date")
+SWSI_data_DEs = SWSI_data_DEs %>% dplyr::select(Date, SWSI_values) %>% arrange(Date)
+SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
+
+ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
+  geom_path() + geom_point() + theme_bw()
+
+

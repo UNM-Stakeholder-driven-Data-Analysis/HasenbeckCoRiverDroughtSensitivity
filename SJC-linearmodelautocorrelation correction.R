@@ -199,7 +199,7 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-
+Azotea_Corrected <-Discharge_data_DEs
 
 #### Heron - Create time series and remove seasonality ####
 ## load data and format date/time ##
@@ -293,7 +293,7 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-
+HeronCorrected <- Discharge_data_DEs
 
 #### CO SWSI - Create time series and remove seasonality ####
 ## load data and format date/time ##
@@ -361,7 +361,7 @@ SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
 ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
   geom_path() + geom_point() + theme_bw()
 
-
+CO_SWSI_Corrected <- SWSI_data_DEs
 
 #### RG SWSI - Create time series and remove seasonality ####
 ## load data and format date/time ##
@@ -428,4 +428,18 @@ SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
 ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
   geom_path() + geom_point() + theme_bw()
 
+RG_SWSI_Corrected <- SWSI_data_DEs
 
+
+###Azotea - CO SWSI - Linear model ####
+Azotea_CO_SWSI <- 
+  full_join(Azotea_Corrected,CO_SWSI_Corrected, by = "Date") %>%
+  filter(Date >= "1981-12-01") %>% #No SWSI data before this date.
+  filter(Date <= "2022-02-01") #No SWSI data after this date.
+
+CombinedData <- Azotea_CO_SWSI
+
+## plot the data ###
+CombinedData %>%
+  ggplot(aes(x = Discharge, y = SWSI_values)) + 
+  geom_point()

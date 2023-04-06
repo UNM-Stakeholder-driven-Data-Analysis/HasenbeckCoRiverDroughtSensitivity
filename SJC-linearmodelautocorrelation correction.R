@@ -472,7 +472,7 @@ forecast::checkresiduals(mod)
 #data:  Residuals
 #LM test = 150.13, df = 10, p-value < 2.2e-16
 
-#### test & calculate trends - nlme::gls ####
+### test & calculate trends - nlme::gls ###
 
 # see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
 
@@ -536,7 +536,7 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
              time=coef(mod_AMRAp1q1)[2],
              logLik=logLik(mod_AMRAp1q1))
 
-#### test & calculate trends - UARSS ####
+### test & calculate trends - UARSS ###
 
 ## MARSS ##
 # User;s guide: https://cran.r-project.org/web/packages/MARSS/vignettes/UserGuide.pdf
@@ -595,7 +595,7 @@ est.AMRAp1q1
 resids.1 <- residuals(mod.AMRAp1q1) # see ?residuals.marssMLE
 # plot residuals
 par(mfrow=c(2,3))
-#### Trend detection - This code doesnt work for me! Ts error! ####
+### Trend detection - This code doesnt work for me! Ts error! ###
 Acf(resids.1$model.residuals[1,], main="Observation process model residuals")
 plot(resids.1$model.residuals[1,]~c(1:length(dat)), main="Observation process model residuals"); abline(h=0)
 qqnorm(resids.1$model.residuals[1,], main="Observation process model residuals", pch=16, 
@@ -644,3 +644,191 @@ mtext("Fitted values over observations", outer = TRUE, cex = 1.5)
 
 # you can make a similar plot from nlme::gls results! go try and figure that out :)
 
+
+
+####Azotea - CO SWSI linear model WITHOUT SEASONALITY CORRECTION ####
+Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_filled,SWSI_CO, by = "Date") %>% #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+  filter(Azotea_CO_SWSI_NO_adjust$Date >= "1981-12-01", Azotea_CO_SWSI_NO_adjust$Date <= "2022-02-01")  #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+Azotea_CO_SWSI_NO_adjust$Discharge <- as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
+Azotea_CO_SWSI_NO_adjust$SWSI_values <- as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
+
+CombinedData <- Azotea_CO_SWSI_NO_adjust
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+
+summary(mod_AMRAp2q2)
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))
+####Azotea - CO SWSI linear model DISCHARGE SEASONALITY CORRECTED ONLY ####
+Azotea_CO_SWSI_discharge_adjust <- full_join(Azotea_Corrected,SWSI_CO, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_CO_SWSI_discharge_adjust <- filter(Azotea_CO_SWSI_discharge_adjust$Date >= "1981-12-01", discharge_adjust$Date <= "2022-02-01")  #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+Azotea_CO_SWSI_NO_adjust$Discharge <- as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
+Azotea_CO_SWSI_NO_adjust$SWSI_values <- as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
+
+CombinedData <- Azotea_CO_SWSI_NO_adjust
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+
+summary(mod_AMRAp2q2)
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))

@@ -555,7 +555,7 @@ dat = as.vector(CombinedData$SWSI_values)
 dat = na.trim(dat, is.na="any")
 
 ## set model parameters - see powerpoint for 
-mod.list.AR1 = list(
+mod.list.AMRAp1q1 = list(
   B=matrix("b"),          # state process model
   Q=matrix("q"),          # state process model
   U="zero",               # state process model
@@ -563,38 +563,39 @@ mod.list.AR1 = list(
   Z="identity",           # observation process model
   R=matrix("r"),          # observation process model
   A=matrix("intercept"),  # observation process model
-  D=matrix("time"),       # observation process model
+  D=matrix("SWSI_values"),       # observation process model
   d=matrix(c(1:length(dat)), nrow=1), # observation process model
   x0=matrix(dat[1]), 
   tinitx=0
 )
 
 ## fit model
-# mod.AR1 <- MARSS(dat, model=mod.list.AR1, method="BFGS")
-mod.AR1 <- MARSS(dat, model=mod.list.AR1, control=list(maxit=10000))
+# mod.AMRAp1q1 <- MARSS(dat, model=mod.list.AMRAp1q1, method="BFGS")
+mod.AMRAp1q1 <- MARSS(dat, model=mod.list.AMRAp1q1, control=list(maxit=10000))
 beep(2)
-# est.AR1 <- MARSSparamCIs(mod.AR1, method = "parametric", alpha = 0.05, nboot = 2000, silent=F)
-est.AR1 <- MARSSparamCIs(mod.AR1, method = "hessian", alpha = 0.05)
+# est.AMRAp1q1 <- MARSSparamCIs(mod.AMRAp1q1, method = "parametric", alpha = 0.05, nboot = 2000, silent=F)
+est.AMRAp1q1 <- MARSSparamCIs(mod.AMRAp1q1, method = "hessian", alpha = 0.05)
 
 ## extract parameter estimates for comparison to gls
-ests.marss = c(b=coef(mod.AR1)$B, alpha=coef(mod.AR1)$A,
-               time=coef(mod.AR1)$D[1],
-               logLik=logLik(mod.AR1))
+ests.marss = c(b=coef(mod.AMRAp1q1)$B, alpha=coef(mod.AMRAp1q1)$A,
+               time=coef(mod.AMRAp1q1)$D[1],
+               logLik=logLik(mod.AMRAp1q1))
 
 ## compare UARSS and gls results
 # parameter estimates
 ests.marss
 ests.gls
 # 95% CIs on trend estimate
-intervals(mod_Ar1)
-est.AR1
+intervals(mod_AMRAp1q1)
+est.AMRAp1q1
 # notice that UARSS provides a slightly narrower confidence interval
 
 ## test residuals for ac
 # extract residuals
-resids.1 <- residuals(mod.AR1) # see ?residuals.marssMLE
+resids.1 <- residuals(mod.AMRAp1q1) # see ?residuals.marssMLE
 # plot residuals
 par(mfrow=c(2,3))
+#### Trend detection - This code doesnt work for me! Ts error! ####
 Acf(resids.1$model.residuals[1,], main="Observation process model residuals")
 plot(resids.1$model.residuals[1,]~c(1:length(dat)), main="Observation process model residuals"); abline(h=0)
 qqnorm(resids.1$model.residuals[1,], main="Observation process model residuals", pch=16, 
@@ -612,28 +613,28 @@ qqnorm(resids.1$state.residuals[1,], main="Observation process model residuals",
 
 ## Plot fitted values over observations ###
 # extract MARSS results
-kf=print(mod.AR1, what="kfs") # Kalman filter and smoother output
+kf=print(mod.AMRAp1q1, what="kfs") # Kalman filter and smoother output
 # plot observed data (y)
 par(mfrow=c(1,1),oma = c(0, 0, 2, 0))
-plot(as.vector(dat) ~ RG_abq_mo_DEs$date, type="p", pch=19,
+plot(as.vector(dat) ~ CombinedData$Date, type="p", pch=19,
      main = "UARSS model predictions conditioned on all y",
      ylab = "Discharge (cfs)", xlab="")
 # calc and plot predicted values
 predicts = as.vector(kf$xtT) + 
-  coef(mod.AR1)$A[1] + 
-  (as.vector(mod.AR1[["model"]][["fixed"]][["d"]])* coef(mod.AR1)$D[1])
-lines(predicts ~ RG_abq_mo_DEs$date, col="blue",lwd=2) 
-lines(RG_abq_mo_DEs$date, predicts-1.96*mod.AR1$states.se,
+  coef(mod.AMRAp1q1)$A[1] + 
+  (as.vector(mod.AMRAp1q1[["model"]][["fixed"]][["d"]])* coef(mod.AMRAp1q1)$D[1])
+lines(predicts ~ CombinedData$Date, col="blue",lwd=2) 
+lines(CombinedData$Date, predicts-1.96*mod.AMRAp1q1$states.se,
       type="l",lwd=1,lty=2,col="blue")
-lines(RG_abq_mo_DEs$date, predicts+1.96*mod.AR1$states.se,
+lines(CombinedData$Date, predicts+1.96*mod.AMRAp1q1$states.se,
       type="l",lwd=1,lty=2,col="blue")
 # calc and plot predicted values without trend
 predicts.trendless = as.vector(kf$xtT) + 
-  coef(mod.AR1)$A[1] 
-lines(predicts.trendless ~ RG_abq_mo_DEs$date, col="red",lwd=2) 
-lines(RG_abq_mo_DEs$date, predicts.trendless-1.96*mod.AR1$states.se,
+  coef(mod.AMRAp1q1)$A[1] 
+lines(predicts.trendless ~ CombinedData$Date, col="red",lwd=2) 
+lines(CombinedData$Date, predicts.trendless-1.96*mod.AMRAp1q1$states.se,
       type="l",lwd=1,lty=2,col="red")
-lines(RG_abq_mo_DEs$date, predicts.trendless+1.96*mod.AR1$states.se,
+lines(CombinedData$Date, predicts.trendless+1.96*mod.AMRAp1q1$states.se,
       type="l",lwd=1,lty=2,col="red")
 mtext("Fitted values over observations", outer = TRUE, cex = 1.5)
 # dashed lines are 95% CIs, calculated from the standard error. The value of 1.96 is based on the fact that 95% of the area of a normal distribution is within 1.96 standard deviations of the mean.

@@ -31,7 +31,7 @@ library(visreg)
 
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
 SWSI$Date = as.Date.character(SWSI$Date, format = "%Y-%m-%d")
-
+View(SWSI)
 #### prep time series ####
 
 sum(is.na(SWSI$Date))
@@ -438,7 +438,7 @@ Azotea_CO_SWSI <-
   filter(Date <= "2022-02-01") #No SWSI data after this date.
 
 CombinedData <- Azotea_CO_SWSI
-
+View(CombinedData)
 ## plot the data ###
 CombinedData %>%
   ggplot(aes(x = Discharge, y = SWSI_values)) + 

@@ -958,3 +958,478 @@ mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
 ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
              time=coef(mod_AMRAp1q1)[2],
              logLik=logLik(mod_AMRAp1q1))
+
+####Azotea - RG SWSI linear model w seasonal correction on Azotea data  ####
+Azotea_RG_SWSI <- full_join(Azotea_Corrected,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_RG_SWSI$Discharge = as.numeric(Azotea_RG_SWSI$Discharge)
+Azotea_RG_SWSI$SWSI_values = as.numeric(Azotea_RG_SWSI$SWSI_values)
+View(Azotea_RG_SWSI)
+
+#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+Azotea_RG_SWSI <- 
+  filter(Azotea_RG_SWSI, Date >= "1981-06-01", Date <= "2022-08-01")  
+
+CombinedData <- Azotea_RG_SWSI
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+
+#BIC result:
+#mod_AMRAp1q1  0.0 5 
+#mod_AMRAp0q2  0.3 5 
+#mod_AMRAp2    1.1 5 
+#mod_AMRAp3    5.9 6 
+#mod_AMRAp1q2  8.2 6 
+#mod_AMRAp2q2 12.1 7 
+#mod_Ar1      18.2 4 
+
+summary(mod_AMRAp2q2)
+
+
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS-RGRG AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGRG AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS-RGRG AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS-RGAMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS-RGAMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS-RGAMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS-RGAMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS-RGAMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS-RGAMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS-RGAMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS-RGAMRAp1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp2q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS-RGAMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS-RGAMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="GLS-RGAr1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAr1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS-RGAr1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))
+
+####Heron - CO SWSI linear model WITHOUT SEASONALITY CORRECTION ####
+Heron_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Heron_CO_SWSI_Raw$Discharge = as.numeric(Heron_CO_SWSI_Raw$Discharge)
+Heron_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_CO_SWSI_Raw$SWSI_values)
+View(Heron_CO_SWSI_Raw)
+#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+Heron_CO_SWSI_Raw <- 
+  filter(Heron_CO_SWSI_Raw, Date >= "2008-01-01", Date <= "2022-08-01")  
+
+CombinedData <- Heron_CO_SWSI_Raw
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+#Doesnt run: mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
+
+#dAIC   df
+#mod_AMRAp2q2    0.0 7 
+#mod_AMRAp1q1    1.7 5 
+#mod_AMRAp0q2    1.8 5 
+#mod_AMRAp2      3.6 5 
+#mod_AMRAp3      5.4 6 
+#mod_Ar1      6405.7 4 
+
+summary(mod_AMRAp2q2)
+
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals: AMRAp2q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))
+
+####Heron - CO SWSI linear model w seasonal correction on Heron data  ####
+Heron_Adjust_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Heron_Adjust_CO_SWSI_Raw$Discharge = as.numeric(Heron_Adjust_CO_SWSI_Raw$Discharge)
+Heron_Adjust_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Adjust_CO_SWSI_Raw$SWSI_values)
+View(Heron_Adjust_CO_SWSI_Raw)
+#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+Heron_Adjust_CO_SWSI_Raw <- 
+  filter(Heron_Adjust_CO_SWSI_Raw, Date >= "2008-01-01", Date <= "2022-08-01")  
+
+CombinedData <- Heron_Adjust_CO_SWSI_Raw
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+# doesnt run mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+
+#BIC result:
+#dAIC   df
+#mod_AMRAp2q2    0.0 7 
+#mod_AMRAp1q1    1.7 5 
+#mod_AMRAp0q2    1.8 5 
+#mod_AMRAp2      3.6 5 
+#mod_AMRAp3      5.4 6 
+#mod_Ar1         8.0 4 
+#mod_AMRAp1q2 6387.3 6 
+
+summary(mod_AMRAp2q2)
+
+
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp2q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))

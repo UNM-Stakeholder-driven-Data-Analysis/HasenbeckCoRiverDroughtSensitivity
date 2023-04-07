@@ -647,11 +647,14 @@ mtext("Fitted values over observations", outer = TRUE, cex = 1.5)
 
 
 ####Azotea - CO SWSI linear model WITHOUT SEASONALITY CORRECTION ####
-Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_filled,SWSI_CO, by = "Date") %>% #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-  filter(Azotea_CO_SWSI_NO_adjust$Date >= "1981-12-01", Azotea_CO_SWSI_NO_adjust$Date <= "2022-02-01")  #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_CO_SWSI_NO_adjust$Discharge = as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
+Azotea_CO_SWSI_NO_adjust$SWSI_values = as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
 
-Azotea_CO_SWSI_NO_adjust$Discharge <- as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
-Azotea_CO_SWSI_NO_adjust$SWSI_values <- as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
+#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+Azotea_CO_SWSI_NO_adjust <- 
+  filter(Azotea_CO_SWSI_NO_adjust, Date >= "1981-12-01", Date <= "2022-02-01")  
 
 CombinedData <- Azotea_CO_SWSI_NO_adjust
 ### linear trends ###
@@ -705,7 +708,18 @@ bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1
 bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 
+#BIC result:
+#dBIC  df
+#mod_AMRAp2q2   0.0 7 
+#mod_AMRAp2    18.1 5 
+#mod_AMRAp3    24.1 6 
+#mod_AMRAp0q2  31.5 5 
+#mod_AMRAp1q1  38.7 5 
+#mod_Ar1      129.0 4 
+
 summary(mod_AMRAp2q2)
+
+
 
 # intervals() for nlme is equivelant to confint() for lm
 intervals(mod_AMRAp2q2)
@@ -727,24 +741,70 @@ visreg(mod_AMRAp2q2,"SWSI_values")
 
 Acf(resid(mod_AMRAp2q2))
 
-# extract and assess residuals
+# extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
 Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
 plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
 qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
 
 # exctract parameter estimates for comparison with MARSS
 mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
 ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
              time=coef(mod_AMRAp1q1)[2],
              logLik=logLik(mod_AMRAp1q1))
-####Azotea - CO SWSI linear model DISCHARGE SEASONALITY CORRECTED ONLY ####
-Azotea_CO_SWSI_discharge_adjust <- full_join(Azotea_Corrected,SWSI_CO, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-Azotea_CO_SWSI_discharge_adjust <- filter(Azotea_CO_SWSI_discharge_adjust$Date >= "1981-12-01", discharge_adjust$Date <= "2022-02-01")  #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
 
-Azotea_CO_SWSI_NO_adjust$Discharge <- as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
-Azotea_CO_SWSI_NO_adjust$SWSI_values <- as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
+####Azotea - CO SWSI linear model w seasonal correction on Azotea data  ####
+Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_Corrected,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_CO_SWSI_NO_adjust$Discharge = as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
+Azotea_CO_SWSI_NO_adjust$SWSI_values = as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
+
+#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+Azotea_CO_SWSI_NO_adjust <- 
+  filter(Azotea_CO_SWSI_NO_adjust, Date >= "1981-12-01", Date <= "2022-02-01")  
 
 CombinedData <- Azotea_CO_SWSI_NO_adjust
 ### linear trends ###
@@ -798,7 +858,18 @@ bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1
 bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 
+#BIC result:
+#mod_AMRAp1q1  0.0 5 
+#mod_AMRAp0q2  0.2 5 
+#mod_AMRAp2    1.1 5 
+#mod_AMRAp3    5.8 6 
+#mod_AMRAp1q2  8.4 6 
+#mod_AMRAp2q2 12.0 7 
+#mod_Ar1      19.5 4 
+
 summary(mod_AMRAp2q2)
+
+
 
 # intervals() for nlme is equivelant to confint() for lm
 intervals(mod_AMRAp2q2)
@@ -820,12 +891,67 @@ visreg(mod_AMRAp2q2,"SWSI_values")
 
 Acf(resid(mod_AMRAp2q2))
 
-# extract and assess residuals
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
+
+
+
+# extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
 Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
 plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
 qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
 
 # exctract parameter estimates for comparison with MARSS
 mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)

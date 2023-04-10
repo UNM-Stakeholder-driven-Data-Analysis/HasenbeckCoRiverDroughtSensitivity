@@ -1,9 +1,6 @@
 #### read me ####
 
-# the purpose of this script is to demonstrate statisitcal testing of trends by two methods
-
-# Here, I use monthly data with no NAs and with seasonality removed via decomposition. 
-# It's worth exploring what happens and how you need to adjust models if you use higher frequency data, retain NAs, retain seasonality, or use other methods to remove it.
+# This script prepares data for linear modeling and then creates a comparison of a few different model structures. 
 
 #### libraries ####
 
@@ -870,17 +867,6 @@ intervals(mod_AMRAp2q2)
 par(mfrow=c(1,1))
 visreg(mod_AMRAp2q2,"SWSI_values")
 
-### Important notes about extracting residuals from model fits!! ###
-
-# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
-# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
-# see ?residuals.gls for the methods avaiable for this model type
-# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
-
-# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
-# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
-# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
-
 Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
@@ -943,13 +929,6 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI G
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
-
-
-# exctract parameter estimates for comparison with MARSS
-mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
-ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
-             time=coef(mod_AMRAp1q1)[2],
-             logLik=logLik(mod_AMRAp1q1))
 
 ####Azotea - RG SWSI linear model w seasonal correction on Azotea data ##Candidates: p3, p1q2,(p2q2, p0q2 over the line)  ####
 ##Candidates: p3, p1q2
@@ -1036,15 +1015,6 @@ visreg(mod_AMRAp2q2,"SWSI_values")
 
 ### Important notes about extracting residuals from model fits!! ###
 
-# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
-# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
-# see ?residuals.gls for the methods avaiable for this model type
-# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
-
-# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
-# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
-# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
-
 Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
@@ -1107,13 +1077,6 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI G
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
-
-
-# exctract parameter estimates for comparison with MARSS
-mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
-ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
-             time=coef(mod_AMRAp1q1)[2],
-             logLik=logLik(mod_AMRAp1q1))
 
 ####Heron - CO SWSI linear model WITHOUT SEASONALITY CORRECTION ####
 Heron_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
@@ -1195,16 +1158,6 @@ intervals(mod_AMRAp2q2)
 par(mfrow=c(1,1))
 visreg(mod_AMRAp2q2,"SWSI_values")
 
-### Important notes about extracting residuals from model fits!! ###
-
-# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
-# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
-# see ?residuals.gls for the methods avaiable for this model type
-# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
-
-# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
-# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
-# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
 
 Acf(resid(mod_AMRAp2q2))
 
@@ -1256,12 +1209,6 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main="Raw discharge & SWSI GLS Ar1mo
 
 
 
-
-# exctract parameter estimates for comparison with MARSS
-mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
-ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
-             time=coef(mod_AMRAp1q1)[2],
-             logLik=logLik(mod_AMRAp1q1))
 
 ####Heron - CO SWSI linear model w seasonal correction on Heron data  ####
 Heron_Adjust_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
@@ -1346,17 +1293,6 @@ intervals(mod_AMRAp2q2)
 par(mfrow=c(1,1))
 visreg(mod_AMRAp2q2,"SWSI_values")
 
-### Important notes about extracting residuals from model fits!! ###
-
-# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
-# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
-# see ?residuals.gls for the methods avaiable for this model type
-# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
-
-# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
-# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
-# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
-
 Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
@@ -1419,10 +1355,3 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
-
-
-# exctract parameter estimates for comparison with MARSS
-mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
-ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
-             time=coef(mod_AMRAp1q1)[2],
-             logLik=logLik(mod_AMRAp1q1))

@@ -743,49 +743,40 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
-
-
-
-# extract and assess residuals: Ar1
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
 
@@ -796,7 +787,8 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
              time=coef(mod_AMRAp1q1)[2],
              logLik=logLik(mod_AMRAp1q1))
 
-####Azotea - CO SWSI linear model w seasonal correction on Azotea data  ####
+####Azotea - CO SWSI linear model w seasonal correction on Azotea data  ##Candidates p1q1, p0q2 ####
+##Candidates p1q1, p0q2 (<-these two had best BIC comparison), p3, p1q2
 Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_Corrected,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Azotea_CO_SWSI_NO_adjust$Discharge = as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
 Azotea_CO_SWSI_NO_adjust$SWSI_values = as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
@@ -893,51 +885,51 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals")
-plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
@@ -945,9 +937,9 @@ qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residu
 
 # extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAr1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
@@ -959,11 +951,12 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
              time=coef(mod_AMRAp1q1)[2],
              logLik=logLik(mod_AMRAp1q1))
 
-####Azotea - RG SWSI linear model w seasonal correction on Azotea data  ####
+####Azotea - RG SWSI linear model w seasonal correction on Azotea data ##Candidates: p3, p1q2,(p2q2, p0q2 over the line)  ####
+##Candidates: p3, p1q2
 Azotea_RG_SWSI <- full_join(Azotea_Corrected,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Azotea_RG_SWSI$Discharge = as.numeric(Azotea_RG_SWSI$Discharge)
 Azotea_RG_SWSI$SWSI_values = as.numeric(Azotea_RG_SWSI$SWSI_values)
-View(Azotea_RG_SWSI)
+
 
 #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
 Azotea_RG_SWSI <- 
@@ -1056,51 +1049,51 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS-RGRG AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGRG AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS-RGRG AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGRG AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGRG AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGRG AMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS-RGAMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS-RGAMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS-RGAMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS-RGAMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS-RGAMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS-RGAMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS-RGAMRAp1q2 model residuals")
-plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp1q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS-RGAMRAp1q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS-RGAMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS-RGAMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
@@ -1108,9 +1101,9 @@ qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS-RGAMRAp2q2 model resi
 
 # extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="GLS-RGAr1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS-RGAr1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS-RGAr1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAr1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLS-RGAr1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLS-RGAr1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
@@ -1126,8 +1119,8 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
 Heron_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_CO_SWSI_Raw$Discharge = as.numeric(Heron_CO_SWSI_Raw$Discharge)
 Heron_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_CO_SWSI_Raw$SWSI_values)
-View(Heron_CO_SWSI_Raw)
-#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+#POR for Heron data is older than for SWSI. Remove dates where there are no SWSI values. 
 
 Heron_CO_SWSI_Raw <- 
   filter(Heron_CO_SWSI_Raw, Date >= "2008-01-01", Date <= "2022-08-01")  
@@ -1217,48 +1210,48 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Raw discharge & SWSI GLS AMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
 
 
 
 # extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main="Raw discharge & SWSI GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Raw discharge & SWSI GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Raw discharge & SWSI GLS Ar1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 
@@ -1274,7 +1267,7 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
 Heron_Adjust_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_Adjust_CO_SWSI_Raw$Discharge = as.numeric(Heron_Adjust_CO_SWSI_Raw$Discharge)
 Heron_Adjust_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Adjust_CO_SWSI_Raw$SWSI_values)
-View(Heron_Adjust_CO_SWSI_Raw)
+
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
 Heron_Adjust_CO_SWSI_Raw <- 
   filter(Heron_Adjust_CO_SWSI_Raw, Date >= "2008-01-01", Date <= "2022-08-01")  
@@ -1320,7 +1313,7 @@ mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR
 mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
 mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
 mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-# doesnt run mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+#doesn't run mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
 mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
@@ -1368,51 +1361,51 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="GLS AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="GLS AMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="GLS AMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="GLS AMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals")
-plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp1q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="GLS AMRAp1q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q2 model residuals")
+plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
 
 
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS AMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
@@ -1420,9 +1413,9 @@ qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="GLS AMRAp2q2 model residu
 
 # extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="GLS Ar1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 
 

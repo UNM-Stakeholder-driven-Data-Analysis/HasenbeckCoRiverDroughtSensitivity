@@ -100,7 +100,7 @@ ggplot(SWSI_DEs, aes(x=Date, y=SWSI_values, color = ))+
 #### Azotea - Create time series and remove seasonality ####
 ## load data and format date/time ##
 AzoteaDiversions <- read_csv(file = "data/processed/AzoteaMonthlyDischarge")
-View(AzoteaDiversions)
+
 
 AzoteaDiversions$Date = as.Date(AzoteaDiversions$Date, "%y-%m-%d")
 
@@ -136,7 +136,7 @@ Azotea_filled$Date = AzoteaDiversions$Date
 names(Azotea_filled) = c(colnames(AzoteaDiversions)[1],colnames(AzoteaDiversions)[2])
 Azotea_filled = Azotea_filled %>% dplyr::select(Discharge, Date)
 Azotea_filled$Discharge[Azotea_filled$Discharge < 0] = 0 #replace negative extrapolated values with 0.
-View(Azotea_filled)
+
 # check NAs that are left
 sum(is.na(Azotea_filled$Date))
 #No more NAs. 
@@ -187,10 +187,16 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
+
+par(mfrow=c(1,3))
+
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
-  geom_path() + geom_point() + theme_bw()
+    geom_path() + geom_point() + theme_bw() + ggtitle("Seasonally Adjusted Azotea")
 
 Azotea_Corrected <-Discharge_data_DEs
+
+ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
+  geom_path() + geom_point() + theme_bw() + ggtitle("Raw Azotea")
 
 #### Heron - Create time series and remove seasonality ####
 ## load data and format date/time ##

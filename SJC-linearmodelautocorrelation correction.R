@@ -181,10 +181,11 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
+Azotea_Decompose <- Discharge_data_DEs
+
 #####differencing ####
 timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
 
-View(timeseries)
 # compare original to de-seasoned ts
 par(mfrow=c(3,2))
 plot(timeseries)
@@ -307,7 +308,7 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-HeronCorrected <- Discharge_data_DEs
+HeronDecompose <- Discharge_data_DEs
 
 #### CO SWSI - Create time series and remove seasonality ####
 ## load data and format date/time ##
@@ -315,7 +316,6 @@ SWSI_CO <- read_csv(file = "data/processed/SWSI1981to2023.csv") %>%
   dplyr::select(Date,Colorado) %>%
   rename("SWSI_values" = "Colorado")
 
-View(SWSI_CO)
 
 SWSI_CO$Date = as.Date(SWSI_CO$Date, "%y-%m-%d")
 
@@ -375,7 +375,36 @@ SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
 ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
   geom_path() + geom_point() + theme_bw()
 
-CO_SWSI_Corrected <- SWSI_data_DEs
+CO_SWSI_Decompose <- SWSI_data_DEs
+
+####Difference - doesn't do much #### 
+
+timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_diff)
+Acf(timeseries)
+Acf(timeseries_diff)
+Pacf(timeseries)
+Pacf(timeseries_diff)
+
+# revert back to df
+SWSI_data_DEs = as.data.frame(timeseries_DEs)
+SWSI_data_DEs$Date = SWSI_data$Date
+names(SWSI_data_DEs) = c("SWSI_values","Date")
+SWSI_data_DEs = SWSI_data_DEs %>% dplyr::select(Date, SWSI_values) %>% arrange(Date)
+SWSI_data_DEs = na.trim(SWSI_data_DEs, "both")
+
+ggplot(SWSI_data_DEs, aes(x=Date, y=SWSI_values))+
+  geom_path() + geom_point() + theme_bw()
+
+CO_SWSI_Diff <- SWSI_data_DEs
+
+
+
+
 
 #### RG SWSI - Create time series and remove seasonality ####
 ## load data and format date/time ##
@@ -1101,6 +1130,147 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI G
 
 
 
+####Azotea - CO SWSI linear model - Azotea differenced ####
+AzoteaDiff_CO_SWSI <- full_join(Azotea_Diff,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+AzoteaDiff_CO_SWSI$Discharge = as.numeric(AzoteaDiff_CO_SWSI$Discharge)
+AzoteaDiff_CO_SWSI$SWSI_values = as.numeric(AzoteaDiff_CO_SWSI$SWSI_values)
+
+#POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
+
+AzoteaDiff_CO_SWSI <- 
+  filter(AzoteaDiff_CO_SWSI, Date >= "1981-12-01", Date <= "2022-02-01")  
+
+CombinedData <- AzoteaDiff_CO_SWSI
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+
+#BIC result:
+#dBIC  df
+#mod_AMRAp2q2   0.0 7 
+#mod_AMRAp2    18.1 5 
+#mod_AMRAp3    24.1 6 
+#mod_AMRAp0q2  31.5 5 
+#mod_AMRAp1q1  38.7 5 
+#mod_Ar1      129.0 4 
+
+summary(mod_AMRAp2q2)
+
+
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+### Important notes about extracting residuals from model fits!! ###
+
+# It's important to understand that many extraction fxns in R, such as residuals(modelfit) (same as resid(modelfit)), will detect the object type and call on methods from that package appropriate for that object. So, residuals(modelfit) is using different methods for different model types when the model package requires it, and you need to look up the options for these different methods.
+# E.g., residuals(nlme model) calls residuals.lme(nlme model), which has different options than if you call residuals(model fit) on a different kind of model. 
+# see ?residuals.gls for the methods avaiable for this model type
+# type ?residuals. into your console and scroll through the options for other residuals methods for loaded packages
+
+# For gls, you want to assess assumptions on normalized residuals, which is not an option for standard linear models.
+# normalized residuals = standardized residuals pre-multiplied by the inverse square-root factor of the estimated error correlation matrix
+# see https://stats.stackexchange.com/questions/80823/do-autocorrelated-residual-patterns-remain-even-in-models-with-appropriate-corre
+
+Acf(resid(mod_AMRAp2q2))
+
+# extract and assess residuals: AMRAp2q2: 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
+
+
+# extract and assess residuals: #mod_AMRAp2 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+# extract and assess residuals: mod_AMRAp3 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+
+# extract and assess residuals: AMRAp0q2
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+
+# extract and assess residuals: AMRAp1q1
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+
+
+
+# exctract parameter estimates for comparison with MARSS
+mod_AMRAp1q1.phi = coef(mod_AMRAp1q1$modelStruct[[1]], unconstrained=FALSE)
+ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
+             time=coef(mod_AMRAp1q1)[2],
+             logLik=logLik(mod_AMRAp1q1))
+
 ####Heron - CO SWSI linear model WITHOUT SEASONALITY CORRECTION ####
 Heron_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_CO_SWSI_Raw$Discharge = as.numeric(Heron_CO_SWSI_Raw$Discharge)
@@ -1376,5 +1546,6 @@ Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS
 plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
 qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
 
 

@@ -152,7 +152,7 @@ head(timeseries)
 par(mfrow=c(1,1))
 plot(timeseries)
 
-### remove seasonality ####
+### remove seasonality ###
 
 # examine seasonality
 par(mfrow=c(3,1))
@@ -161,29 +161,7 @@ Acf(timeseries)
 Pacf(timeseries)
 
 
-
-# decompose into additive components
-plot(decompose(timeseries))
-# decompose into multiplicative components
-plot(decompose(timeseries, type="multiplicative"))
-# extract components from multiplicative
-timeseries_decomp = decompose(timeseries, type="multiplicative")
-timeseries_trend = timeseries_decomp$trend
-timeseries_remainder = timeseries_decomp$random
-# save de-seasoned ts
-timeseries_DEs = timeseries_trend * timeseries_remainder
-
-
-# revert back to df
-Discharge_data_DEs = as.data.frame(timeseries_DEs)
-Discharge_data_DEs$Date = Discharge_data$Date
-names(Discharge_data_DEs) = c("Discharge","Date")
-Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
-Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
-
-Azotea_Decompose <- Discharge_data_DEs
-
-#####differencing ####
+####differencing ###
 timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
 
 # compare original to de-seasoned ts

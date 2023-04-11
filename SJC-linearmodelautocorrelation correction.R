@@ -22,7 +22,7 @@ library(visreg)
 
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
 SWSI$Date = as.Date.character(SWSI$Date, format = "%Y-%m-%d")
-View(SWSI)
+
 #### prep time series ####
 
 sum(is.na(SWSI$Date))
@@ -152,13 +152,15 @@ head(timeseries)
 par(mfrow=c(1,1))
 plot(timeseries)
 
-### remove seasonality ###
+### remove seasonality ####
 
 # examine seasonality
 par(mfrow=c(3,1))
 plot(timeseries)
 Acf(timeseries)
 Pacf(timeseries)
+
+
 
 # decompose into additive components
 plot(decompose(timeseries))
@@ -171,14 +173,6 @@ timeseries_remainder = timeseries_decomp$random
 # save de-seasoned ts
 timeseries_DEs = timeseries_trend * timeseries_remainder
 
-# compare original to de-seasoned ts
-par(mfrow=c(3,2))
-plot(timeseries)
-plot(timeseries_DEs)
-Acf(timeseries)
-Acf(timeseries_DEs)
-Pacf(timeseries)
-Pacf(timeseries_DEs)
 
 # revert back to df
 Discharge_data_DEs = as.data.frame(timeseries_DEs)
@@ -187,13 +181,36 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
+#####differencing ####
+timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
 
-par(mfrow=c(1,3))
+View(timeseries)
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_diff_final)
+Acf(timeseries)
 
-ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+Acf(timeseries_diff_final)
+Pacf(timeseries)
+Pacf(timeseries_diff_final)
+
+# revert back to df
+timeseries_diff_final = as.data.frame(timeseries_diff)
+timeseries_diff_final$Date = Discharge_data$Date
+names(timeseries_diff_final) = c("Discharge","Date")
+timeseries_diff_final = timeseries_diff_final %>% dplyr::select(Date, Discharge) %>% arrange(Date)
+timeseries_diff_final = na.trim(timeseries_diff_final, "both")
+
+view(timeseries_diff_final)
+
+par(mfrow=c(1,2))
+
+
+ggplot(timeseries_diff_final, aes(x=Date, y=Discharge))+
     geom_path() + geom_point() + theme_bw() + ggtitle("Seasonally Adjusted Azotea")
 
-Azotea_Corrected <-Discharge_data_DEs
+Azotea_Diff <- timeseries_diff_final
 
 ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw() + ggtitle("Raw Azotea")

@@ -160,6 +160,37 @@ plot(timeseries)
 Acf(timeseries)
 Pacf(timeseries)
 
+# decompose into additive components
+plot(decompose(timeseries))
+# decompose into multiplicative components
+plot(decompose(timeseries, type="multiplicative"))
+# extract components from multiplicative
+timeseries_decomp = decompose(timeseries, type="multiplicative")
+timeseries_trend = timeseries_decomp$trend
+timeseries_remainder = timeseries_decomp$random
+# save de-seasoned ts
+timeseries_DEs = timeseries_trend * timeseries_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_DEs)
+Acf(timeseries)
+Acf(timeseries_DEs)
+Pacf(timeseries)
+Pacf(timeseries_DEs)
+
+# revert back to df
+Discharge_data_DEs = as.data.frame(timeseries_DEs)
+Discharge_data_DEs$Date = Discharge_data$Date
+names(Discharge_data_DEs) = c("Discharge","Date")
+Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
+Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
+
+ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+  geom_path() + geom_point() + theme_bw()
+
+AzoteaDecomp <- Discharge_data_DEs
 
 ####differencing ###
 timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
@@ -198,7 +229,6 @@ ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
 ## load data and format date/time ##
 HeronReleases <- read_csv(file = "data/processed/HeronMonthlyReleases") %>%
   rename("Discharge" = "Release")
-View(HeronReleases)
 
 HeronReleases$Date = as.Date(HeronReleases$Date, "%y-%m-%d")
 
@@ -207,11 +237,11 @@ sum(is.na(HeronReleases$Date))
 #No NAs
 
 sum(is.na(HeronReleases$Discharge))
-#2 NAs
+#3 NAs
 
 # check percentage of dataset with NAs - this is important to document!
 sum(is.na(HeronReleases))/nrow(HeronReleases)*100
-#1%
+#1.6%
 
 ## fill gaps with spline interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
@@ -232,7 +262,7 @@ Heron_filled = as.data.frame(Heron_filled)
 Heron_filled$Date = HeronReleases$Date
 names(Heron_filled) = c(colnames(HeronReleases)[1],colnames(HeronReleases)[2])
 Heron_filled = Heron_filled %>% dplyr::select(Discharge, Date)
-View(Heron_filled)
+Heron_filled$Discharge[Heron_filled$Discharge < 0] = 0
 # check NAs that are left
 sum(is.na(Heron_filled$Date))
 #No more NAs. 
@@ -284,6 +314,9 @@ Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% a
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+  geom_path() + geom_point() + theme_bw()
+
+ggplot(Heron_filled, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 HeronDecompose <- Discharge_data_DEs
@@ -816,7 +849,7 @@ ests.gls = c(b=mod_AMRAp1q1.phi, alpha=coef(mod_Ar1)[1],
 
 ####Azotea - CO SWSI linear model w seasonal correction on Azotea data  ##Candidates p1q1, p0q2 ####
 ##Candidates p1q1, p0q2 (<-these two had best BIC comparison), p3, p1q2
-Azotea_CO_SWSI_NO_adjust <- full_join(Azotea_Corrected,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_CO_SWSI_NO_adjust <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Azotea_CO_SWSI_NO_adjust$Discharge = as.numeric(Azotea_CO_SWSI_NO_adjust$Discharge)
 Azotea_CO_SWSI_NO_adjust$SWSI_values = as.numeric(Azotea_CO_SWSI_NO_adjust$SWSI_values)
 

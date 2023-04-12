@@ -162,34 +162,34 @@ Pacf(timeseries)
 
 
 ####differencing ###
-timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
+
+library(data.table)
+
+DT = data.table(Discharge_data)
+
+timeseries_diff_df <- DT[ , list(Discharge,Date,Discharge_Diff=diff(Discharge, differences = 1, lag = 12))  ] %>%
+  select(Date,Discharge_Diff) %>% 
+  rename(Discharge = Discharge_Diff)
+
+timeseries_diff = ts(timeseries_diff_df$Discharge, start = c(1970-10-01), frequency = 12)
+
 
 # compare original to de-seasoned ts
 par(mfrow=c(3,2))
 plot(timeseries)
-plot(timeseries_diff_final)
+plot(timeseries_diff)
 Acf(timeseries)
-
-Acf(timeseries_diff_final)
+Acf(timeseries_diff)
 Pacf(timeseries)
-Pacf(timeseries_diff_final)
-
-# revert back to df
-timeseries_diff_final = as.data.frame(timeseries_diff)
-timeseries_diff_final$Date = Discharge_data$Date
-names(timeseries_diff_final) = c("Discharge","Date")
-timeseries_diff_final = timeseries_diff_final %>% dplyr::select(Date, Discharge) %>% arrange(Date)
-timeseries_diff_final = na.trim(timeseries_diff_final, "both")
-
-view(timeseries_diff_final)
+Pacf(timeseries_diff)
 
 par(mfrow=c(1,2))
 
+#Save as basin 
+Azotea_Diff <- timeseries_diff_df
 
-ggplot(timeseries_diff_final, aes(x=Date, y=Discharge))+
+ggplot(Azotea_Diff, aes(x=Date, y=Discharge))+
     geom_path() + geom_point() + theme_bw() + ggtitle("Seasonally Adjusted Azotea")
-
-Azotea_Diff <- timeseries_diff_final
 
 ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw() + ggtitle("Raw Azotea")
@@ -198,7 +198,7 @@ ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
 ## load data and format date/time ##
 HeronReleases <- read_csv(file = "data/processed/HeronMonthlyReleases") %>%
   rename("Discharge" = "Release")
-View(HeronReleases)
+
 
 HeronReleases$Date = as.Date(HeronReleases$Date, "%y-%m-%d")
 
@@ -232,7 +232,7 @@ Heron_filled = as.data.frame(Heron_filled)
 Heron_filled$Date = HeronReleases$Date
 names(Heron_filled) = c(colnames(HeronReleases)[1],colnames(HeronReleases)[2])
 Heron_filled = Heron_filled %>% dplyr::select(Discharge, Date)
-View(Heron_filled)
+
 # check NAs that are left
 sum(is.na(Heron_filled$Date))
 #No more NAs. 
@@ -1170,14 +1170,14 @@ bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1
 bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 
-#BIC result:
-#dBIC  df
-#mod_AMRAp2q2   0.0 7 
-#mod_AMRAp2    18.1 5 
-#mod_AMRAp3    24.1 6 
-#mod_AMRAp0q2  31.5 5 
-#mod_AMRAp1q1  38.7 5 
-#mod_Ar1      129.0 4 
+#dBIC df
+#mod_AMRAp2q2  0.0 7 
+#mod_AMRAp1q1  5.4 5 
+#mod_AMRAp2    6.8 5 
+#mod_AMRAp0q2  8.5 5 
+#mod_Ar1       9.0 4 
+#mod_AMRAp1q2 11.3 6 
+#mod_AMRAp3   12.1 6 
 
 summary(mod_AMRAp2q2)
 
@@ -1205,39 +1205,39 @@ Acf(resid(mod_AMRAp2q2))
 
 # extract and assess residuals: AMRAp2q2: 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals")
-plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2q2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp2q2 model residuals")
+plot(resid(mod_AMRAp2q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Diff Azotea & SWSI GLS AMRAp2q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2q2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp2q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2q2, type = "normalized"))
 
 
 # extract and assess residuals: #mod_AMRAp2 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Diff Azotea & SWSI GLS AMRAp2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
 
 # extract and assess residuals: mod_AMRAp3 
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp3 model residuals", pch=16, 
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Diff Azotea & SWSI GLS AMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp3 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
 
 # extract and assess residuals: AMRAp0q2
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp0q2 model residuals", pch=16, 
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Diff Azotea & SWSI GLS AMRAp0q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp0q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
 
 
 # extract and assess residuals: AMRAp1q1
 par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="RAW Azotea & SWSI GLS AMRAp1q1model residuals", pch=16, 
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Diff Azotea & SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Diff Azotea & SWSI GLS AMRAp1q1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
 
 

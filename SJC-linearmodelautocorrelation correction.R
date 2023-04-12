@@ -162,6 +162,7 @@ Pacf(timeseries)
 
 
 ####differencing ###
+<<<<<<< HEAD
 
 library(data.table)
 
@@ -173,6 +174,9 @@ timeseries_diff_df <- DT[ , list(Discharge,Date,Discharge_Diff=diff(Discharge, d
 
 timeseries_diff = ts(timeseries_diff_df$Discharge, start = c(1970-10-01), frequency = 12)
 
+=======
+timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
+>>>>>>> main
 
 # compare original to de-seasoned ts
 par(mfrow=c(3,2))

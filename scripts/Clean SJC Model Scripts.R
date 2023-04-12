@@ -383,12 +383,13 @@ summary(mod_AMRAp1q2)
 ####Azotea - RG SWSI linear model w seasonal correction on Azotea data   ####
 #p1q2
 Azotea_Decomp_RG_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-Azotea_Decomp_RG_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_RG_SWSI_Raw$Discharge)
-Azotea_Decomp_RG_SWSI_Raw$SWSI_values = as.numeric(Azotea_Decomp_RG_SWSI_Raw$SWSI_values)
 
 #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
 Azotea_Decomp_RG_SWSI_Raw <- 
-  filter(Azotea_Decomp_RG_SWSI_Raw, Date >= "1981-06-01", Date <= "2022-08-01")  
+  filter(Azotea_Decomp_RG_SWSI_Raw, Date >= "1981-06-01", Date <= "2022-08-01") 
+Azotea_Decomp_RG_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_Decomp_RG_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_RG_SWSI_Raw$Discharge)
+Azotea_Decomp_RG_SWSI_Raw$SWSI_values = as.numeric(Azotea_Decomp_RG_SWSI_Raw$SWSI_values)
 
 CombinedData <- Azotea_Decomp_RG_SWSI_Raw
 
@@ -443,7 +444,6 @@ Acf(resid(mod_AMRAp1q2))
 
 
 
-
 # extract and assess residuals: AMRAp1q2. Chosing this one because it best satisfies autocorrelation. 
 par(mfrow=c(1,3))
 Acf(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals")
@@ -452,7 +452,7 @@ qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
 
 Acf(resid(mod_AMRAp1q2))
-
+AIC(mod_AMRAp1q2)
 summary(mod_AMRAp1q2)
 
 # #Generalized least squares fit by maximum likelihood
@@ -567,17 +567,16 @@ Acf(resid(mod_AMRAp1q2))
 # Degrees of freedom: 510 total; 508 residual
 
 
-
 ####Heron - CO SWSI linear model w seasonal correction on Heron data  ####
-Heron_Adjust_CO_SWSI_Raw <- full_join(Heron_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-Heron_Adjust_CO_SWSI_Raw$Discharge = as.numeric(Heron_Adjust_CO_SWSI_Raw$Discharge)
-Heron_Adjust_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Adjust_CO_SWSI_Raw$SWSI_values)
+Heron_Decomp_CO_SWSI_Raw <- full_join(HeronDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Heron_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_CO_SWSI_Raw$Discharge)
+Heron_Decomp_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Decomp_CO_SWSI_Raw$SWSI_values)
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
-Heron_Adjust_CO_SWSI_Raw <- 
-  filter(Heron_Adjust_CO_SWSI_Raw, Date >= "2008-01-01", Date <= "2022-08-01")  
+Heron_Decomp_CO_SWSI_Raw <- 
+  filter(Heron_Decomp_CO_SWSI_Raw, Date >= "2008-07-01", Date <= "2022-08-01")  
 
-CombinedData <- Heron_Adjust_CO_SWSI_Raw
+CombinedData <- Heron_Decomp_CO_SWSI_Raw
 
 ### linear trends ###
 
@@ -618,7 +617,7 @@ mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR
 mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
 mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
 mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-#doesn't run mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
 mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
@@ -628,17 +627,131 @@ mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR
 # For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
 bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
-bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
 
-#BIC result:
-#dAIC   df
-#mod_AMRAp2q2    0.0 7 
-#mod_AMRAp1q1    1.7 5 
-#mod_AMRAp0q2    1.8 5 
-#mod_AMRAp2      3.6 5 
-#mod_AMRAp3      5.4 6 
-#mod_Ar1         8.0 4 
-#mod_AMRAp1q2 6387.3 6 
+# dBIC df
+# mod_AMRAp1q1 0.0  5 
+# mod_AMRAp0q2 0.1  5 
+# mod_AMRAp2   1.9  5 
+# mod_Ar1      3.0  4 
+# mod_AMRAp2q2 4.8  7 
+# # mod_AMRAp3   7.0  6 
+
+summary(mod_AMRAp2q2)
+
+
+
+# intervals() for nlme is equivelant to confint() for lm
+intervals(mod_AMRAp2q2)
+
+
+par(mfrow=c(1,1))
+visreg(mod_AMRAp2q2,"SWSI_values")
+
+Acf(resid(mod_AMRAp2q2))
+
+
+
+# extract and assess residuals: Ar1
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+summary(mod_Ar1)
+
+# Generalized least squares fit by maximum likelihood
+# Model: Discharge ~ SWSI_values 
+# Data: CombinedData 
+# AIC      BIC    logLik
+# 3669.752 3682.633 -1830.876
+# 
+# Correlation Structure: AR(1)
+# Formula: ~1 
+# Parameter estimate(s):
+#   Phi 
+# 0.4640426 
+# 
+# Coefficients:
+#   Value Std.Error   t-value p-value
+# (Intercept) 4411.575  659.4013  6.690274  0.0000
+# SWSI_values  -51.570  237.4815 -0.217156  0.8283
+# 
+# Correlation: 
+#   (Intr)
+# SWSI_values 0     
+# 
+# Standardized residuals:
+#   Min         Q1        Med         Q3        Max 
+# -0.8456439 -0.7055374 -0.2797005  0.2994502  6.2544986 
+# 
+# Residual standard error: 5422.338 
+# Degrees of freedom: 185 total; 183 residual
+
+
+####Heron - RG SWSI linear model w seasonal correction on Heron data ####
+Heron_Decomp_RG_SWSI_Raw <- full_join(HeronDecomp,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Heron_Decomp_RG_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_RG_SWSI_Raw$Discharge)
+Heron_Decomp_RG_SWSI_Raw$SWSI_values = as.numeric(Heron_Decomp_RG_SWSI_Raw$SWSI_values)
+
+#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+Heron_Decomp_RG_SWSI_Raw <- 
+  filter(Heron_Decomp_RG_SWSI_Raw, Date >= "2008-07-01", Date <= "2022-08-01")  
+
+CombinedData <- Heron_Decomp_RG_SWSI_Raw
+
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 2
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+#mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
+
 
 summary(mod_AMRAp2q2)
 
@@ -714,3 +827,32 @@ qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI 
 
 
 
+summary(mod_Ar1)
+
+# Generalized least squares fit by maximum likelihood
+# Model: Discharge ~ SWSI_values 
+# Data: CombinedData 
+# AIC      BIC   logLik
+# 3661.759 3674.641 -1826.88
+# 
+# Correlation Structure: AR(1)
+# Formula: ~1 
+# Parameter estimate(s):
+#   Phi 
+# 0.4500629 
+# 
+# Coefficients:
+#   Value Std.Error   t-value p-value
+# (Intercept) 4187.806  633.9745  6.605638  0.0000
+# SWSI_values -735.972  257.3048 -2.860311  0.0047
+# 
+# Correlation: 
+#   (Intr)
+# SWSI_values 0.124 
+# 
+# Standardized residuals:
+#   Min         Q1        Med         Q3        Max 
+# -1.3086654 -0.6417618 -0.2551769  0.2928152  6.1761334 
+# 
+# Residual standard error: 5264.006 
+# Degrees of freedom: 185 total; 183 residual

@@ -419,6 +419,14 @@ AIC(mod.hurdle)
 AIC(mod.hurdle.nb) # lower is better
 #[1] 7262.279
 
+
+par(mfrow=c(1,3))
+Acf(resid(mod.hurdle.nb, type = "pearson"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals")
+plot(resid(mod.hurdle.nb, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod.hurdle.nb, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod.hurdle.nb, type = "normalized"))$statistic,2))); qqline(resid(mod.hurdle.nb, type = "normalized"))
+
+
 #### Heron and CO SWSI Hurdle - Hurdle NB AIC : 3015.786 #### 
 CombinedData <-  full_join(HeronReleases,SWSI_Colorado, by = "Date") #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 CombinedData$Discharge = as.integer(CombinedData$Discharge) #Set data types

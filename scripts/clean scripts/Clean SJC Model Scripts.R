@@ -11,7 +11,7 @@ library(nlme)
 library(zoo)
 library(lme4)
 library(visreg)
-library(scales)
+
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
@@ -222,11 +222,8 @@ HeronDecomp <- Discharge_data_DEs
 SWSI_CO <- SWSI %>%
   dplyr::select(Date, Colorado) %>%
   rename("SWSI_values" = "Colorado") %>% 
-  group_by(Date)
-
-SWSI_CO$SWSI_values = scales :: rescale(SWSI_CO$SWSI_values, to = c(-4,4))
-
-SWSI_CO <- SSWSI_CO$SWSI_values = summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
+  group_by(Date) %>%
+  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
 
 # check for duplicate date/time stamps
 anyDuplicated(SWSI_CO$Date)

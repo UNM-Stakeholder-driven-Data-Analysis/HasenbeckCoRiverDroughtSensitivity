@@ -11,6 +11,7 @@ library(nlme)
 library(zoo)
 library(lme4)
 library(visreg)
+library(scales)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
@@ -62,7 +63,6 @@ plot(ts.temp)
 Azotea_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 plot(Azotea_filled)
 
-#Converting negative values to 0. 
 par(mfrow=c(1,1)) # reset plotting window
 # revert back to df
 Azotea_filled = as.data.frame(Azotea_filled)
@@ -138,7 +138,7 @@ sum(is.na(HeronReleases$Date))
 sum(is.na(HeronReleases$Discharge))
 #3 NAs
 
-# check percentage of dataset with NAs - this is important to document!
+# check percentage of dataset with NAs 
 sum(is.na(HeronReleases))/nrow(HeronReleases)*100
 #1.6%
 
@@ -222,8 +222,11 @@ HeronDecomp <- Discharge_data_DEs
 SWSI_CO <- SWSI %>%
   dplyr::select(Date, Colorado) %>%
   rename("SWSI_values" = "Colorado") %>% 
-  group_by(Date) %>% 
-  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
+  group_by(Date)
+
+SWSI_CO$SWSI_values = scales :: rescale(SWSI_CO$SWSI_values, to = c(-4,4))
+
+SWSI_CO <- SSWSI_CO$SWSI_values = summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
 
 # check for duplicate date/time stamps
 anyDuplicated(SWSI_CO$Date)
@@ -249,7 +252,7 @@ sum(is.na(SWSI_RG))/nrow(SWSI_RG)*100
 
 ####Azotea - CO SWSI linear model w seasonal correction on Azotea data - ARIMA model   ####
 
-Azotea_Decomp_CO_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Azotea_Decomp_CO_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, CO SWSI
 Azotea_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_CO_SWSI_Raw$Discharge)
 Azotea_Decomp_CO_SWSI_Raw$SWSI_values = as.numeric(Azotea_Decomp_CO_SWSI_Raw$SWSI_values)
 
@@ -455,7 +458,7 @@ summary(mod_AMRAp1q2)
 # 0.5756965 -0.2958421  0.5413013 
 # 
 # Coefficients:
-#   Value Std.Error  t-value p-value
+#                  Value Std.Error  t-value p-value
 # (Intercept) 3538.612  436.7897 8.101408  0.0000
 # SWSI_values  278.363  151.4172 1.838384  0.0666
 # 

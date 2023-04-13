@@ -21,11 +21,14 @@ SWSI2010tonow <- read.csv("data/raw/SWSI2010tonow.csv")
 
 ####Cleaning SWSI 2010 to now data####
   
+SWSI2010tonow$swsi = scales :: rescale(SWSI2010tonow$swsi, to = c(-4,4))
+
 SWSI2010tonowCLEAN <- SWSI2010tonow %>%
   select("basin","report_year","report_month","swsi") %>% #select only columns of interest
   pivot_wider(names_from = "basin", values_from = "swsi") %>% #pivot to a wider table to match format of past data
   mutate(Date_Recorded = paste(report_year,report_month,"1", sep = "-")) %>%  #combine year and month columns into one date, add 01 as day
   select(!(report_year:report_month)) #remove year and month columns
+
 
 #### Joining 2010 and 1981 datasets####
 SWSIjoin <- full_join(SWSI1981to2011,
@@ -95,7 +98,6 @@ View(SWSI1981to2023)
 #convert new column to factor 
 SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 
-write_csv(SWSIdataexplore,"data/processed/SWSIdataexplore.csv")
 #### describe dataset size and structure ####
 
 SWSIdataexplore <- read_csv("data/processed/SWSI1981to2023.csv")
@@ -343,8 +345,11 @@ SWSInorm = SWSIdataexplore
 
 #Norming function: 
 library(scales)
-SWSInorm$SWSI = rescale(SWSInorm$SWSI, 
-                        to = c(-4,4))
+SWSInorm = SWSI1981to2023
+SWSInorm$Gunnison <- scales :: rescale(SWSInorm$Gunnison, to = c(-4,4))
+
+rescale(vec, to = c(0, 5))  
+?rescale
 
 ####
 

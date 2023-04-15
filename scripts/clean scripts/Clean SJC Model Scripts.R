@@ -296,7 +296,10 @@ mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), 
 # fit some other candidate structures
 mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
 mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+
+#RUN THIS MODEL THIS IS THE ONE 
 mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+
 mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
 mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
 mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
@@ -306,12 +309,12 @@ mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR
 # compare models with BIC
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
-
+bbmle::pAICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
 # dBIC df
-# mod_AMRAp1q1  0.0 5 
+# mod_AMRAp1q1  0.0 5 ****
 # mod_AMRAp0q2  0.3 5 
 # mod_AMRAp2    1.2 5 
-# mod_AMRAp3    5.9 6 
+# mod_AMRAp3    5.9 6 **** 
 # mod_AMRAp1q2  8.5 6 
 # mod_AMRAp2q2 12.1 7 
 # mod_Ar1      20.1 4 
@@ -329,17 +332,57 @@ visreg(mod_AMRAp2q2,"SWSI_values")
 
 Acf(resid(mod_AMRAp2q2))
 
+# AMRAp0q2, P2 has too much autocorrelation
 
-# extract and assess residuals: AMRAp1q2. Chosing this one because it best satisfies autocorrelation. 
+
+# extract and assess residuals: AMRAp1q1. p = 0.09
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+par(mfrow=c(1,1))
+Acf(resid(mod_AMRAp1q1))
+summary(mod_AMRAp1q1)
+
+# extract and assess residuals: AMRAp1q2. Chosing this one because it best satisfies autocorrelation. p = .1095
 par(mfrow=c(1,3))
 Acf(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals")
 plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals"); abline(h=0)
 qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
-
+par(mfrow=c(1,1))
 Acf(resid(mod_AMRAp1q2))
 
+visreg(mod_AMRAp1q2,"SWSI_values")
 summary(mod_AMRAp1q2)
+
+
+# extract and assess residuals: AMRAp3. p = 0.08
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+par(mfrow=c(1,1))
+Acf(resid(mod_AMRAp3))
+summary(mod_AMRAp3)
+visreg(mod_AMRAp3)
+
+Azotea_CO_P3 <- mod_AMRAp3
+
+#Plot result 
+visreg(Azotea_CO_P3, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Discharge") +
+  ggtitle("Azotea Diversions by Colorado SWSI")
+
+
+# saving the plot as png 
+ggsave("AzoteaCOP3result.png", path = "results/graphs/")
+
+
 
 # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
@@ -414,7 +457,9 @@ auto.arima(CombinedData$Discharge)
 # last number is moving average term 1
 
 # fit  regression model with SWSI as a predictor
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
 mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
 summary(mod_AMRAp1q2)
@@ -431,16 +476,54 @@ visreg(mod_AMRAp1q2,"SWSI_values")
 Acf(resid(mod_AMRAp1q2))
 
 
-# extract and assess residuals: AMRAp1q2. Chosing this one because it best satisfies autocorrelation. 
+# extract and assess residuals: AMRAp1q1. p = 0.0673
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q1 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+par(mfrow=c(1,1))
+Acf(resid(mod_AMRAp1q1))
+summary(mod_AMRAp1q1)
+
+# extract and assess residuals: AMRAp1q2. p = 0.673
 par(mfrow=c(1,3))
 Acf(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals")
 plot(resid(mod_AMRAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals"); abline(h=0)
 qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q2, type = "normalized"))
-
+par(mfrow=c(1,1))
 Acf(resid(mod_AMRAp1q2))
-AIC(mod_AMRAp1q2)
+
+visreg(mod_AMRAp1q2,"SWSI_values")
 summary(mod_AMRAp1q2)
+
+
+# extract and assess residuals: AMRAp3. p = 0.559
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals")
+plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
+par(mfrow=c(1,1))
+Acf(resid(mod_AMRAp3))
+summary(mod_AMRAp3)
+visreg(mod_AMRAp3)
+
+Azotea_RG_P3 <- mod_AMRAp3
+
+
+#Plot result 
+Azotea_RG_P3_plot <- visreg(Azotea_RG_P3, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Dsicharge") +
+  ggtitle("Azotea Diversions by Rio Grande SWSI")
+
+# saving the plot as png 
+ggsave("AzoteaRGP3result.png", plot = Azotea_RG_P3_plot, path = "results/graphs/")
+
+
 
 # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
@@ -537,21 +620,51 @@ bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1
 bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
 
-# dBIC df
-# mod_AMRAp1q1 0.0  5 
-# mod_AMRAp0q2 0.1  5 
-# mod_AMRAp2   1.9  5 
-# mod_Ar1      3.0  4 
-# mod_AMRAp2q2 4.8  7 
-# # mod_AMRAp3   7.0  6 
+# dAIC df
+# mod_Ar1      0.0  4 
+# mod_AMRAp0q2 0.7  5 
+# mod_AMRAp1q1 0.8  5 
+# mod_AMRAp2   1.0  5 
+# mod_AMRAp3   2.5  6 
+# mod_AMRAp1q2 2.8  6 
+# mod_AMRAp2q2 4.4  7
 
-# extract and assess residuals: Ar1
+# extract and assess residuals: ArP2 p = 0.59
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+summary(mod_AMRAp2)
+
+# extract and assess residuals: ArP0q2 p = 0.59
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+summary(mod_AMRAp0q2)
+
+
+# extract and assess residuals: ArP1Q1 p = 0.63
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp1q1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+summary(mod_AMRAp1q1)
+
+
+# extract and assess residuals: Ar1 p = 0.63
 par(mfrow=c(1,3))
 Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
 plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
 qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
 summary(mod_Ar1)
+
+
+Heron_CO_AR1 <- mod_Ar1
 
 # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
@@ -646,16 +759,48 @@ bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp
 bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp2q2)
 
 
-# extract and assess residuals: Ar1
+# extract and assess residuals: Ar1 p =0.0044
 par(mfrow=c(1,3))
 Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
 plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
 qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+summary(mod_Ar1)
 
+# extract and assess residuals: ArP2 p = 0.0045
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp2model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+summary(mod_AMRAp2)
 
+# extract and assess residuals: ArP0q2 p = 0.0046
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS AMRAp0q2model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+summary(mod_AMRAp0q2)
+
+par(mfrow=c(1,1))
+visreg(mod_Ar1)
 
 summary(mod_Ar1)
+
+Heron_RG_AR1 <- mod_Ar1
+
+
+#Plot result 
+visreg(Heron_RG_AR1, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Outflow Discharge") +
+  ggtitle("Heron Outflows by Rio Grande SWSI")
+
+
+# saving the plot as png 
+ggsave("Heron_RG_AR1result.png", path = "results/graphs/")
 
 # # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
@@ -684,3 +829,12 @@ summary(mod_Ar1)
 # 
 # Residual standard error: 5193.573 
 # Degrees of freedom: 170 total; 168 residual
+
+####Plot models #### 
+
+visreg(Heron_RG_AR1, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Dsicharge") +
+  ggtitle("Heron Outlows by Rio Grande SWSI")
+

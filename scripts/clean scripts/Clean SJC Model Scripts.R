@@ -63,6 +63,9 @@ plot(ts.temp)
 Azotea_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 plot(Azotea_filled)
 
+par(mfrow=c(1,1))
+hist(AzoteaDiversions$Discharge, breaks = 100)
+
 par(mfrow=c(1,1)) # reset plotting window
 # revert back to df
 Azotea_filled = as.data.frame(Azotea_filled)
@@ -132,6 +135,11 @@ AzoteaDecomp <- Discharge_data_DEs
 
 #### Heron - Create time series and remove seasonality ####
 ## prep time series ##
+
+##data explore## 
+hist(HeronReleases$Discharge, breaks = 100)
+acf(Heron_filled$Discharge)
+
 sum(is.na(HeronReleases$Date))
 #No NAs
 
@@ -291,18 +299,15 @@ auto.arima(CombinedData$Discharge)
 # last number is moving average term 1
 
 # fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+#mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
 
-# fit some other candidate structures
-mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
-mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
-
-#RUN THIS MODEL THIS IS THE ONE 
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
-
-mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
-mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+# fit some other candidate structures - run these if needed
+#mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+#mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML") #selected structure
+#mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+#mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+#mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
 
@@ -370,6 +375,8 @@ summary(mod_AMRAp3)
 visreg(mod_AMRAp3)
 
 Azotea_CO_P3 <- mod_AMRAp3
+
+
 
 #Plot result 
 visreg(Azotea_CO_P3, "SWSI_values", gg = T) +
@@ -457,8 +464,8 @@ auto.arima(CombinedData$Discharge)
 # last number is moving average term 1
 
 # fit  regression model with SWSI as a predictor
-mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
-mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+#mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+#mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
 mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
@@ -596,7 +603,7 @@ forecast::checkresiduals(mod)
 
 # ask auto.arima what it thinks the autocorrelation structure is
 auto.arima(CombinedData$Discharge)
-#first number is autoregressive coef 2
+#first number is autoregressive coef 0
 # middle is differencing data 0
 # last number is moving average term 2
 
@@ -604,13 +611,13 @@ auto.arima(CombinedData$Discharge)
 mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
 
 # fit some other candidate structures
-mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
-mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
-mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
-mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
-#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+# mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+# mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+# mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+# mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+# mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+# mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+# #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
 
 # compare models with AIC, AICc, and BIC
@@ -742,13 +749,13 @@ auto.arima(CombinedData$Discharge)
 mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
 
 # fit some other candidate structures
-mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
-mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
-mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-#mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
-mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
-#p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
+# mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+# mod_AMRAp2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2), method="ML")
+# mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+# mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+# #mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+# mod_AMRAp2q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=2,q=2), method="ML") 
+# #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
 
 # compare models with AIC, AICc, and BIC

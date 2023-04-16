@@ -62,7 +62,7 @@ plot(ts.temp)
 # Apply NA interpolation method: Using max gap of 7 days 
 Azotea_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 plot(Azotea_filled)
-
+?na.spline
 par(mfrow=c(1,1))
 hist(AzoteaDiversions$Discharge, breaks = 100)
 

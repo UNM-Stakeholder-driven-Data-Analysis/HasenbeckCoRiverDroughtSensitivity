@@ -527,6 +527,7 @@ Azotea_RG_P3_plot <- visreg(Azotea_RG_P3, "SWSI_values", gg = T) +
   ylab("Predicted Dsicharge") +
   ggtitle("Azotea Diversions by Rio Grande SWSI")
 
+Azotea_RG_P3_plot
 # saving the plot as png 
 ggsave("AzoteaRGP3result.png", plot = Azotea_RG_P3_plot, path = "results/graphs/")
 
@@ -565,6 +566,7 @@ ggsave("AzoteaRGP3result.png", plot = Azotea_RG_P3_plot, path = "results/graphs/
 # middle is differencing data 0
 # last number is moving average term 1
 
+####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model 
 ####Heron - CO SWSI linear model w seasonal correction on Heron data  ####
 Heron_Decomp_CO_SWSI_Raw <- full_join(HeronDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_CO_SWSI_Raw$Discharge)

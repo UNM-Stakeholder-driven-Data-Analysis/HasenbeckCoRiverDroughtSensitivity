@@ -23,40 +23,37 @@ library(visreg)
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
 SWSI$Date = as.Date.character(SWSI$Date, format = "%Y-%m-%d")
 
-#### prep time series ####
+#### prep time series - CO SWSI ####
 
-sum(is.na(SWSI$Date))
+SWSI_CO <- SWSI %>%
+  dplyr::select(Date, Colorado) %>%
+  rename("SWSI_values" = "Colorado") %>% 
+  group_by(Date) %>%
+  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
+
+
+sum(is.na(SWSI_CO$Date))
 #No NAs. 
 
 # remove dup time stamps by taking mean of values
-sum(duplicated(SWSI$Date))
-#15 duplicates
-
-SWSI[which(duplicated(SWSI$Date)),]
-SWSI = SWSI %>% 
-  pivot_longer(cols = "Gunnison":"San_Juan", 
-                               names_to = "basin",
-                               values_to = "SWSI_values") %>%
-  group_by(Date) %>% 
-  summarise(SWSI_values = mean(SWSI_values, na.rm =T))
-
-write_csv(SWSI,file = "data/processed/SWSIduplicatesAvged")
+sum(duplicated(SWSI_CO$Date))
+#0 duplicates
 
 # chec for duplicate date/time stamps
-anyDuplicated(SWSI$Date)
+anyDuplicated(SWSI_CO$Date)
 # check percentage of dataset with NAs - this is important to document!
-sum(is.na(SWSI))/nrow(SWSI)*100
+sum(is.na(SWSI_CO))/nrow(SWSI_CO)*100
 #No NAs! 
 
 #### create time series ####
 
 # need to do this to prep for removing seasonality
 
-SWSI_ts = ts(SWSI$SWSI_values, start = c(1981-06-01), frequency = 12)
-head(SWSI)
+SWSI_ts = ts(SWSI_CO$SWSI_values, start = c(1981-06-01), frequency = 12)
+head(SWSI_CO)
 
 par(mfrow=c(1,1))
-plot(SWSI)
+plot(SWSI_CO)
 
 #### remove seasonality ####
 

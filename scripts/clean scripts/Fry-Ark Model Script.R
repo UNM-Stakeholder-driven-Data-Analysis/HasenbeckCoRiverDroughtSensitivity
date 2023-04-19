@@ -392,36 +392,6 @@ visreg(Boustead_CO_P3, "SWSI_values", gg = T) +
 ggsave("BousteadCOP3result.png", path = "results/graphs/")
 
 
-
-# Generalized least squares fit by maximum likelihood
-# Model: Discharge ~ SWSI_values 
-# Data: CombinedData 
-# AIC      BIC    logLik
-# 9877.753 9902.981 -4932.877
-# 
-# Correlation Structure: ARMA(1,2)
-# Formula: ~1 
-# Parameter estimate(s):
-#   Phi1     Theta1     Theta2 
-# 0.5879469 -0.3084663  0.5311136 
-# 
-# Coefficients:
-#   Value Std.Error  t-value p-value
-# (Intercept) 3551.910  441.1508 8.051464  0.0000
-# SWSI_values  262.156  163.0104 1.608219  0.1084
-# 
-# Correlation: 
-#   (Intr)
-# SWSI_values -0.045
-# 
-# Standardized residuals:
-#   Min         Q1        Med         Q3        Max 
-# -0.7571319 -0.4974943 -0.2594877  0.1457208 12.4093990 
-# 
-# Residual standard error: 6076.267 
-# Degrees of freedom: 495 total; 493 residual
-
-
 #### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARIMA model p = 0.1084   ####
 
 Boustead_Decomp_Ark_SWSI_Raw <- full_join(BousteadDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data
@@ -500,34 +470,6 @@ visreg(Boustead_CO_P3, "SWSI_values", gg = T) +
 ggsave("BousteadArkP3result.png", path = "results/graphs/")
 
 
-
-# Generalized least squares fit by maximum likelihood
-# Model: Discharge ~ SWSI_values 
-# Data: CombinedData 
-# AIC      BIC    logLik
-# 9877.753 9902.981 -4932.877
-# 
-# Correlation Structure: ARMA(1,2)
-# Formula: ~1 
-# Parameter estimate(s):
-#   Phi1     Theta1     Theta2 
-# 0.5879469 -0.3084663  0.5311136 
-# 
-# Coefficients:
-#   Value Std.Error  t-value p-value
-# (Intercept) 3551.910  441.1508 8.051464  0.0000
-# SWSI_values  262.156  163.0104 1.608219  0.1084
-# 
-# Correlation: 
-#   (Intr)
-# SWSI_values -0.045
-# 
-# Standardized residuals:
-#   Min         Q1        Med         Q3        Max 
-# -0.7571319 -0.4974943 -0.2594877  0.1457208 12.4093990 
-# 
-# Residual standard error: 6076.267 
-# Degrees of freedom: 495 total; 493 residual
 
 
 ####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0307 ####

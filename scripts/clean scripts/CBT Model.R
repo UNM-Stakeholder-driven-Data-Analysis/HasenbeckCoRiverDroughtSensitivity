@@ -208,9 +208,29 @@ ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 
-AdamsDecomp <- Discharge_data_DEs
+#decomposition introduced NAs. Replace them with via spine interpolation. 
+sum(is.na(AdamsDecomp$Discharge_data_DEs))
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+# Make univariate zoo time series #
+ts.temp <- read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
+plot(ts.temp)
+# Apply NA interpolation method: Using max gap of 7 days 
+Adams_Decomp_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
+plot(Adams_Decomp_filled)
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to df
+Adams_Decomp_filled = as.data.frame(Adams_Decomp_filled)
+Adams_Decomp_filled$Date = as.Date(rownames(Adams_Decomp_filled)) 
+names(Adams_Decomp_filled) = c(colnames(AdamsDiversions)[2],colnames(AdamsDiversions)[1])
+Adams_Decomp_filled = Adams_Decomp_filled %>% dplyr::select(Discharge, Date)
 
-sum(is.na(AdamsDecomp$Date))
+
+#In case some interpolated values went negative, replace negative values with 0.
+Adams_Decomp_filled$Discharge[Adams_Decomp_filled$Discharge < 0] = 0 
+
+
+AdamsDecomp <- Adams_Decomp_filled
 
 #### Horsetooth - Create time series and remove seasonality ####
 ## prep time series ##
@@ -277,17 +297,32 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
-#Replace NA values with 0. Assumping this is multiplication error in decomposition. 
-Discharge_data_DEs$Discharge[is.na(Discharge_data_DEs$Discharge)] = 0 
+#decomposition introduced 9 NAs. Replace them with via spine interpolation. 
+sum(is.na(Discharge_data_DEs))
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+# Make univariate zoo time series #
+ts.temp <- read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
+plot(ts.temp)
+# Apply NA interpolation method: Using max gap of 7 days 
+Horsetooth_Decomp_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
+plot(Horsetooth_Decomp_filled)
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to df
+Horsetooth_Decomp_filled = as.data.frame(Horsetooth_Decomp_filled)
+Horsetooth_Decomp_filled$Date = as.Date(rownames(Horsetooth_Decomp_filled)) 
+names(Horsetooth_Decomp_filled) = c(colnames(HorsetoothReleases)[1],colnames(HorsetoothReleases)[2])
+Horsetooth_Decomp_filled = Horsetooth_Decomp_filled %>% dplyr::select(Discharge, Date)
 
 
-ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+#In case some interpolated values went negative, replace negative values with 0.
+Horsetooth_Decomp_filled$Discharge[Horsetooth_Decomp_filled$Discharge < 0] = 0 
+
+
+ggplot(Horsetooth_Decomp_filled, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-ggplot(Horsetooth_filled, aes(x=Date, y=Discharge))+
-  geom_path() + geom_point() + theme_bw()
-
-HorsetoothDecomp <- Discharge_data_DEs
+HorsetoothDecomp <- Horsetooth_Decomp_filled
 
 #### CO SWSI Prep for modeling ####
 
@@ -313,7 +348,7 @@ anyDuplicated(SWSI_Platte$Date)
 sum(is.na(SWSI_Platte))/nrow(SWSI_Platte)*100
 #No NAs! 
 
-#### Adams - CO SWSI linear model w seasonal correction on Adams data - ARIMA model 0.3383   ####
+#### Adams - CO SWSI linear model w seasonal correction on Adams data - ARIMA model 0.3442   ####
 
 Adams_Decomp_CO_SWSI_Raw <- full_join(AdamsDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
 
@@ -393,7 +428,7 @@ ggsave("AdamsCOP3result.png", path = "results/graphs/")
 
 
 
-#### Adams - S Platte SWSI linear model w seasonal correction on Adams data - ARIMA model p = 0.0071  ####
+#### Adams - S Platte SWSI linear model w seasonal correction on Adams data - ARIMA model p = 0.0078  ####
 
 Adams_Decomp_SP_SWSI_Raw <- full_join(AdamsDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data
 
@@ -474,7 +509,7 @@ ggsave("AdamsPlatteP3result.png", path = "results/graphs/")
 
 
 
-####Horsetooth - CO SWSI linear model w seasonal correction on HT data p = 0.6761 ####
+####Horsetooth - CO SWSI linear model w seasonal correction on HT data p = 0.6475 ####
 Horsetooth_Decomp_CO_SWSI_Raw <- full_join(HorsetoothDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01
@@ -541,7 +576,7 @@ visreg(Horsetooth_CO_AR1, "SWSI_values", gg = T) +
 ggsave("Horsetooth_CO_AR1result.png", path = "results/graphs/")
 
 
-####Horsetooth - SP SWSI linear model w seasonal correction on HT data p = 0.0055 ####
+####Horsetooth - SP SWSI linear model w seasonal correction on HT data p = 0.0051 ####
 Horsetooth_Decomp_SP_SWSI_Raw <- full_join(HorsetoothDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01

@@ -101,9 +101,9 @@ BousteadDiversions <- read_csv(file = "data/processed/BousteadMonthlyDiversions"
 #Then remove SWSI and interpolate missing values. 
 BousteadInterpolation <- full_join(BousteadDiversions,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
   select(Date,Discharge) %>%
-  #Values before 1990 are funky, so going to reduce the years I am considering. 
+  #Values before 1989 are funky, so going to reduce the years I am considering. 
   #Am instead only going to use 1990-2023 to allow model stability. 
-  filter(Date >= "1990-01-01") 
+  filter(Date >= "1989-11-01") 
 
 ## fill gaps with spline interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
@@ -165,8 +165,14 @@ Discharge_data <- Boustead_filled
 
 #create timeseries. IMPORTANT!!!!!!!!!! RESET START DATE TO DATA START DATE!!!! 
 #Boustead start date: 1990-01-01. Rembember I removed older data.
-timeseries = ts(Discharge_data$Discharge, start = c(1990-01-01), frequency = 12)
+timeseries = ts(Discharge_data$Discharge, start = c(1989-11-01), frequency = 12)
 #SERIOUSLY CHECK DATES!!!!!! 
+
+
+##Did you check the date??? ###
+#Are you SURE? 
+
+
 
 head(timeseries)
 
@@ -208,8 +214,7 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
-#Decomposition removed some more data from 1990. Resetting data values again. 
-
+sum(is.na(Discharge_data_DEs))
 
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
@@ -282,14 +287,35 @@ Discharge_data_DEs$Date = Discharge_data$Date
 names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
+
+#Decomposition introduced NAs. Spline interpolate them to fill them. 
 sum(is.na(Discharge_data_DEs))
-ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+# Make univariate zoo time series #
+ts.temp<-read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
+# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
+plot(ts.temp)
+# Apply NA interpolation method: Using max gap of 7 days 
+Twin_Decomp = na.spline(ts.temp, na.rm = T, maxgap = 7)
+plot(Twin_Decomp)
+# revert back to df
+Twin_Decomp = as.data.frame(Twin_Decomp)
+Twin_Decomp$Date = as.Date(rownames(Twin_Decomp)) 
+names(Twin_Decomp) = c(colnames(TwinReleases)[1],colnames(TwinReleases)[2])
+Twin_Decomp = Twin_Decomp %>% dplyr::select(Discharge, Date)
+
+sum(is.na(Twin_Decomp$Discharge))
+#No more NAs.
+
+
+ggplot(Twin_Decomp, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 ggplot(TwinReleases, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-TwinLakesDecomp <- Discharge_data_DEs
+TwinLakesDecomp <- Twin_Decomp
 
 #### CO SWSI Prep for modeling ####
 
@@ -472,7 +498,7 @@ ggsave("BousteadArkP3result.png", path = "results/graphs/")
 
 
 
-####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0307 ####
+####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0361 ####
 Twin_Decomp_CO_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01
@@ -542,7 +568,7 @@ visreg(Twin_CO_AR1, "SWSI_values", gg = T) +
 # saving the plot as png 
 ggsave("TwinLakes_CO_AR1result.png", path = "results/graphs/")
 
-####Twin - Ark SWSI linear model w seasonal correction on Twin data p = 0.2536 ####
+####Twin - Ark SWSI linear model w seasonal correction on Twin data p = 0.2507 ####
 Twin_Decomp_Ark_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01

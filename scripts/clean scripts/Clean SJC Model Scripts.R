@@ -138,7 +138,7 @@ AzoteaDecomp <- Discharge_data_DEs
 
 ##data explore## 
 hist(HeronReleases$Discharge, breaks = 100)
-acf(Heron_filled$Discharge)
+
 
 sum(is.na(HeronReleases$Date))
 #No NAs

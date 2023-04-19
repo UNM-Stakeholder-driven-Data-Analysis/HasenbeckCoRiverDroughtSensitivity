@@ -24,6 +24,13 @@ BousteadClean <- BousteadDiversions %>%
 BousteadClean$Discharge = as.double(BousteadClean$Discharge) #defining data 
 BousteadClean$date_measured = parse_date_time(BousteadClean$date_measured, c("%m/%d/%Y %H:%M"), exact = T, tz="UTC")  #formatting date
 
+BousteadClean$yr = lubridate::year(BousteadClean$date_measured)# extract just the year
+BousteadClean$mo = lubridate::month(BousteadClean$date_measured) # extract just the month
 
-write_csv(BousteadDiversions,file = "data/processed/BousteadMonthlyDiversions") #write to csv
+BousteadClean$Date = make_date(year = BousteadClean$yr, month = BousteadClean$mo, day = 1) #Re-format date column
+
+BousteadMonthly <- BousteadClean %>% select(Date,Discharge)
+
+
+write_csv(BousteadMonthly,file = "data/processed/BousteadMonthlyDiversions") #write to csv
 

@@ -675,6 +675,7 @@ summary(mod_Ar1)
 
 Heron_CO_AR1 <- mod_Ar1
 
+
 # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
 # Data: CombinedData 
@@ -838,6 +839,35 @@ ggsave("Heron_RG_AR1result.png", path = "results/graphs/")
 # 
 # Residual standard error: 5193.573 
 # Degrees of freedom: 170 total; 168 residual
+
+
+#### Wavelet coherence #### 
+library("biwavelet")
+# Import your data
+# names
+attach(CombinedData)
+
+# Define two sets of variables with time stamps
+t1 = cbind(Date, Discharge)
+t2 = cbind(Date, SWSI_values)
+# Specify the number of iterations. The more, the better (>1000).  For the
+# purpose of this tutorial, we just set it = 10
+nrands = 1000
+
+wtc.AB = wtc(t1, t2, nrands = nrands)
+par(mfrow=c(1,1))
+par(oma = c(0, 0, 0, 1), mar = c(5, 4, 5, 5) + 0.1)
+plot(wtc.AB, plot.phase = TRUE, lty.coi = 1, col.coi = "grey", lwd.coi = 2, 
+     lwd.sig = 2, arrow.lwd = 0.03, arrow.len = 0.12, ylab = "Scale", xlab = "Period", 
+     plot.cb = TRUE, main = "Wavelet Coherence: A vs B")
+
+# Adding grid lines
+n = length(t1[, 1])
+abline(v = seq(-4, n, 4), h = 1:16, col = "brown", lty = 1, lwd = 1)
+
+# Defining x labels
+axis(side = 3, at = c(seq(-4, n, 4)), labels = c(seq(1981, 2023, 1)))
+
 
 ####Plot models #### 
 

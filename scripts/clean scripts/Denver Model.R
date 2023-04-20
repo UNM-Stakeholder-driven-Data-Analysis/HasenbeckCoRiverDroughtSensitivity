@@ -103,20 +103,71 @@ RobertsClean <- full_join(RobertsDiversions,SWSI_CO, by = "Date") %>%#Combining 
 sum(is.na(RobertsClean))
 #There are no nas. 
 
-#### Roberts - Create time series and remove seasonality ####
+#### CO SWSI - Remove seasonality ####
+# need to do this to prep for removing seasonality
 
-## prep time series ##
-sum(is.na(RobertsDiversions$Date))
-#No NAs
+SWSI_ts = ts(SWSI_CO$SWSI_values, start = c(1981-06-01), frequency = 12)
+head(SWSI_CO)
 
-sum(is.na(RobertsDiversions$Discharge))
-#0 NAs
+par(mfrow=c(1,1))
+plot(SWSI_CO)
 
-# check percentage of dataset with NAs 
-sum(is.na(RobertsDiversions))/nrow(RobertsDiversions)*100
-#0%
+### remove seasonality ### tried this and it didnt really help model. 
+# need to do this to prep for removing seasonality
+# Make univariate zoo time series #1981-06-01
+SWSI_ts <- read.zoo(SWSI_CO, index.column=1, format="%Y-%m-%d", frequency = 12)
+# revert back to df
+SWSI_ts = as.data.frame(SWSI_ts)
+SWSI_ts$Date = as.Date(rownames(SWSI_ts))
+names(SWSI_ts) = c(colnames(SWSI_CO)[2],colnames(SWSI_CO)[1])
+SWSI_to_deseason = SWSI_ts %>% dplyr::select(SWSI_values, Date)
+
+SWSI_ts2 = ts(SWSI_to_deseason$SWSI_values, start = c(1981-06-01), frequency = 12)
+head(SWSI_ts)
+
+par(mfrow=c(1,1))
+plot(SWSI_ts2)
+
+#### remove seasonality ####
+
+# examine seasonality
+par(mfrow=c(3,1))
+plot(SWSI_ts2)
+Acf(SWSI_ts2)
+Pacf(SWSI_ts2)
+
+# decompose into additive components
+plot(decompose(SWSI_ts2))
+# decompose into multiplicative components
+plot(decompose(SWSI_ts2, type="multiplicative"))
+# extract components from multiplicative
+SWSI_ts_decomp = decompose(SWSI_ts2, type="multiplicative")
+SWSI_ts_trend = SWSI_ts_decomp$trend
+SWSI_ts_remainder = SWSI_ts_decomp$random
+# save de-seasoned ts
+SWSI_DEs = SWSI_ts_trend * SWSI_ts_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(SWSI_ts2)
+plot(SWSI_DEs)
+Acf(SWSI_ts2)
+Acf(SWSI_DEs)
+Pacf(SWSI_ts2)
+Pacf(SWSI_DEs)
+
+# revert back to df
+SWSI_DEs = as.data.frame(SWSI_DEs)
+SWSI_DEs$Date = as.Date(rownames(SWSI_ts))
+names(SWSI_DEs) = c("SWSI_values","Date")
+SWSI_DEs = SWSI_DEs %>% dplyr::select(Date, SWSI_values) %>% arrange(Date)
+SWSI_DEs = na.trim(SWSI_DEs, "both")
+
+ggplot(SWSI_DEs, aes(x=Date, y=SWSI_values, color = ))+
+  geom_path() + geom_point() + theme_bw()
 
 
+SWSI_CO_Decompose <- SWSI_DEs
 
 #prepping to remove seasonality: 
 

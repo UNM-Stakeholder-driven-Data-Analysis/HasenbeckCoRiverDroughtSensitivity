@@ -44,6 +44,7 @@ TwinReleases <- read_csv(file = "data/processed/TwinLakesMonthlyReleases") %>%
 TwinInterpolation <- full_join(TwinReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
   select(Date,Discharge)
 
+sum(is.na(TwinInterpolation$Discharge)) #79 NAs 
 plot(read.zoo(TwinInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
 
 #Biiiiiiig data gap 1983-1986 and again right before 2018-11-01 
@@ -341,7 +342,7 @@ anyDuplicated(SWSI_Ark$Date)
 sum(is.na(SWSI_Ark))/nrow(SWSI_Ark)*100
 #No NAs! 
 
-#### Boustead - CO SWSI linear model w seasonal correction on Boustead data - ARIMA model p= 0.132   ####
+#### Boustead - CO SWSI linear model w seasonal correction on Boustead data - ARIMA model p= 0.3475   ####
 
 Boustead_Decomp_CO_SWSI_Raw <- full_join(BousteadDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
 
@@ -418,7 +419,7 @@ visreg(Boustead_CO_P3, "SWSI_values", gg = T) +
 ggsave("BousteadCOP3result.png", path = "results/graphs/")
 
 
-#### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARIMA model p = 0.1084   ####
+#### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARIMA model p = 0.6917   ####
 
 Boustead_Decomp_Ark_SWSI_Raw <- full_join(BousteadDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data
 

@@ -50,6 +50,8 @@ AzoteaJoin$mo = lubridate::month(AzoteaJoin$date_measured) # extract just the mo
 
 AzoteaMonthly <- AzoteaJoin %>% #Sum daily data into monthly
   group_by(yr,mo) %>%
+  #Omit NAs, otherwise when you sum data to monthly, it will input an NA for all months that contain ANY NAs 
+  na.omit(Discharge) %>% 
   summarize(MonthlyDischarge = sum(Discharge))
 
 AzoteaMonthly$Date = make_date(year = AzoteaMonthly$yr, month = AzoteaMonthly$mo, day = 1) #Re-format date column 

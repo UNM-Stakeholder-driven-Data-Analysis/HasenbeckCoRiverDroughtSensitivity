@@ -28,6 +28,8 @@ CleanTwin$mo = lubridate::month(CleanTwin$date_measured) # extract just the mont
 
 TwinMonthly <- CleanTwin %>% #Sum daily data into monthly
   group_by(yr,mo) %>%
+  #Omit NAs, otherwise when you sum data to monthly, it will input an NA for all months that contain ANY NAs 
+  na.omit(Discharge) %>% 
   summarize(MonthlyDischarge = sum(Discharge))
 
 TwinMonthly$Date = make_date(year = TwinMonthly$yr, month = TwinMonthly$mo, day = 1) #Re-format date column 

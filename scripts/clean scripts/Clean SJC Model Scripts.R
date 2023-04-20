@@ -45,45 +45,15 @@ sum(is.na(AzoteaDiversions$Date))
 #No NAs
 
 sum(is.na(AzoteaDiversions$Discharge))
-#46 NAs
+#0 NAs
 
 # check percentage of dataset with NAs 
 sum(is.na(AzoteaDiversions))/nrow(AzoteaDiversions)*100
-#7%
-
-## fill gaps with spline interpolation ##
-par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
-
-# Make univariate zoo time series #
-ts.temp<-read.zoo(AzoteaDiversions, index.column=2, format="%Y-%m-%d")
-
-# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
-plot(ts.temp)
-# Apply NA interpolation method: Using max gap of 7 days 
-Azotea_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
-plot(Azotea_filled)
-?na.spline
-par(mfrow=c(1,1))
-hist(AzoteaDiversions$Discharge, breaks = 100)
-
-par(mfrow=c(1,1)) # reset plotting window
-# revert back to df
-Azotea_filled = as.data.frame(Azotea_filled)
-Azotea_filled$Date = AzoteaDiversions$Date
-names(Azotea_filled) = c(colnames(AzoteaDiversions)[1],colnames(AzoteaDiversions)[2])
-Azotea_filled = Azotea_filled %>% dplyr::select(Discharge, Date)
-
-#some interpolated values went negative. Replace negative values with 0.
-Azotea_filled$Discharge[Azotea_filled$Discharge < 0] = 0 
-
-# check NAs that are left
-sum(is.na(Azotea_filled$Date))
-#No more NAs. 
+#0
 
 #prepping to remove seasonality: 
-
 #set df:
-Discharge_data <- Azotea_filled
+Discharge_data <- AzoteaDiversions
 
 #create timeseries 
 timeseries = ts(Discharge_data$Discharge, start = c(1970-10-01), frequency = 12)
@@ -108,6 +78,7 @@ plot(decompose(timeseries, type="multiplicative"))
 # extract components from multiplicative
 timeseries_decomp = decompose(timeseries, type="multiplicative")
 timeseries_trend = timeseries_decomp$trend
+
 timeseries_remainder = timeseries_decomp$random
 # save de-seasoned ts
 timeseries_DEs = timeseries_trend * timeseries_remainder
@@ -128,6 +99,8 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
+sum(is.na(Discharge_data_DEs))
+
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
@@ -144,38 +117,15 @@ sum(is.na(HeronReleases$Date))
 #No NAs
 
 sum(is.na(HeronReleases$Discharge))
-#3 NAs
+#0 NAs
 
 # check percentage of dataset with NAs 
 sum(is.na(HeronReleases))/nrow(HeronReleases)*100
-#1.6%
-
-## fill gaps with spline interpolation ##
-par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
-
-# Make univariate zoo time series #
-ts.temp<-read.zoo(HeronReleases, index.column=2, format="%Y-%m-%d")
-plot(ts.temp)
-
-# Apply NA interpolation method
-Heron_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
-plot(Heron_filled)
-
-par(mfrow=c(1,1)) # reset plotting window
-
-# revert back to df
-Heron_filled = as.data.frame(Heron_filled)
-Heron_filled$Date = HeronReleases$Date
-names(Heron_filled) = c(colnames(HeronReleases)[1],colnames(HeronReleases)[2])
-Heron_filled = Heron_filled %>% dplyr::select(Discharge, Date)
-Heron_filled$Discharge[Heron_filled$Discharge < 0] = 0 #some interpolated values are negative. Turn these into 0s. 
-# check NAs that are left
-sum(is.na(Heron_filled$Date))
-#No more NAs. 
+#0
 
 # need to do this to prep for removing seasonality
 #set df:
-Discharge_data <- Heron_filled
+Discharge_data <- HeronReleases
 
 timeseries = ts(Discharge_data$Discharge, start = c(2008-01-01), frequency = 12)
 head(timeseries)
@@ -221,7 +171,7 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-ggplot(Heron_filled, aes(x=Date, y=Discharge))+
+ggplot(HeronReleases, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 HeronDecomp <- Discharge_data_DEs
@@ -255,15 +205,14 @@ anyDuplicated(SWSI_RG$Date)
 sum(is.na(SWSI_RG))/nrow(SWSI_RG)*100
 #No NAs! 
 
-####Azotea - CO SWSI linear model w seasonal correction on Azotea data - ARIMA model   ####
+####Azotea - CO SWSI linear model w seasonal correction on Azotea data - ARIMA model p = 0.0141  ####
 
 Azotea_Decomp_CO_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, CO SWSI
 Azotea_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_CO_SWSI_Raw$Discharge)
 Azotea_Decomp_CO_SWSI_Raw$SWSI_values = as.numeric(Azotea_Decomp_CO_SWSI_Raw$SWSI_values)
 
 #POR for Azotea data is older than for SWSI. Remove dates where there are no SWSI values. 
-Azotea_Decomp_CO_SWSI_Raw <- 
-  filter(Azotea_Decomp_CO_SWSI_Raw, Date >= "1981-06-01", Date <= "2022-08-01")  
+Azotea_Decomp_CO_SWSI_Raw = na.trim(Azotea_Decomp_CO_SWSI_Raw, "both")
 
 CombinedData <- Azotea_Decomp_CO_SWSI_Raw
 
@@ -311,11 +260,11 @@ mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA
 #p = regressive order, #q is moving average order #41:40#p = regressive order, #q is moving average order #41:40
 
 
-# compare models with BIC
-bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
-bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
-bbmle::pAICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
-# dBIC df
+# # compare models with BIC
+# bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2,mod_AMRAp2q2)
+# bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
+# bbmle::pAICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
+# # dBIC df
 # mod_AMRAp1q1  0.0 5 ****
 # mod_AMRAp0q2  0.3 5 
 # mod_AMRAp2    1.2 5 
@@ -324,18 +273,18 @@ bbmle::pAICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp
 # mod_AMRAp2q2 12.1 7 
 # mod_Ar1      20.1 4 
 
-summary(mod_AMRAp2q2)
+# summary(mod_AMRAp2q2)
 
 
 
 # intervals() for nlme is equivelant to confint() for lm
-intervals(mod_AMRAp2q2)
-
-
-par(mfrow=c(1,1))
-visreg(mod_AMRAp2q2,"SWSI_values")
-
-Acf(resid(mod_AMRAp2q2))
+# intervals(mod_AMRAp2q2)
+# 
+# 
+# par(mfrow=c(1,1))
+# visreg(mod_AMRAp2q2,"SWSI_values")
+# 
+# Acf(resid(mod_AMRAp2q2))
 
 # AMRAp0q2, P2 has too much autocorrelation
 
@@ -379,16 +328,15 @@ Azotea_CO_P3 <- mod_AMRAp3
 
 
 #Plot result 
-visreg(Azotea_CO_P3, "SWSI_values", gg = T) +
+Azotea_CO_P3_plot <- visreg(Azotea_RG_P3, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Discharge") +
-  ggtitle("Azotea Diversions by Colorado SWSI")
+  ylab("Predicted Dsicharge") +
+  ggtitle("Azotea Diversions by Rio Grande SWSI")
 
-
+Azotea_CO_P3_plot
 # saving the plot as png 
-ggsave("AzoteaCOP3result.png", path = "results/graphs/")
-
+ggsave("Azotea_CO_P3result.png", plot = Azotea_CO_P3_plot, path = "results/graphs/")
 
 
 # Generalized least squares fit by maximum likelihood
@@ -420,7 +368,7 @@ ggsave("AzoteaCOP3result.png", path = "results/graphs/")
 # Degrees of freedom: 495 total; 493 residual
 
 
-####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model   ####
+####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model p = 0.0342  ####
 
 Azotea_Decomp_RG_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
@@ -429,6 +377,8 @@ Azotea_Decomp_RG_SWSI_Raw <-
   filter(Azotea_Decomp_RG_SWSI_Raw, Date >= "1981-06-01", Date <= "2022-08-01") 
 Azotea_Decomp_RG_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_RG_SWSI_Raw$Discharge)
 Azotea_Decomp_RG_SWSI_Raw$SWSI_values = as.numeric(Azotea_Decomp_RG_SWSI_Raw$SWSI_values)
+
+Azotea_Decomp_RG_SWSI_Raw = na.trim(Azotea_Decomp_RG_SWSI_Raw, "both")
 
 CombinedData <- Azotea_Decomp_RG_SWSI_Raw
 
@@ -566,15 +516,16 @@ ggsave("AzoteaRGP3result.png", plot = Azotea_RG_P3_plot, path = "results/graphs/
 # middle is differencing data 0
 # last number is moving average term 1
 
+
+
 ####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model 
-####Heron - CO SWSI linear model w seasonal correction on Heron data  ####
+####Heron - CO SWSI linear model w seasonal correction on Heron data p = 0.7147 ####
 Heron_Decomp_CO_SWSI_Raw <- full_join(HeronDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_CO_SWSI_Raw$Discharge)
 Heron_Decomp_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Decomp_CO_SWSI_Raw$SWSI_values)
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
-Heron_Decomp_CO_SWSI_Raw <- 
-  filter(Heron_Decomp_CO_SWSI_Raw, Date >= "2008-07-01", Date <= "2022-08-01")  
+Heron_Decomp_CO_SWSI_Raw = na.trim(Heron_Decomp_CO_SWSI_Raw, "both")
 
 CombinedData <- Heron_Decomp_CO_SWSI_Raw
 
@@ -705,14 +656,13 @@ Heron_CO_AR1 <- mod_Ar1
 # Degrees of freedom: 185 total; 183 residual
 
 
-####Heron - RG SWSI linear model w seasonal correction on Heron data ####
+####Heron - RG SWSI linear model w seasonal correction on Heron data p = 0.0035 ####
 Heron_Decomp_RG_SWSI_Raw <- full_join(HeronDecomp,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_Decomp_RG_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_RG_SWSI_Raw$Discharge)
 Heron_Decomp_RG_SWSI_Raw$SWSI_values = as.numeric(Heron_Decomp_RG_SWSI_Raw$SWSI_values)
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
-Heron_Decomp_RG_SWSI_Raw <- 
-  filter(Heron_Decomp_RG_SWSI_Raw, Date >= "2008-07-01", Date <= "2022-08-01")  
+Heron_Decomp_RG_SWSI_Raw = na.trim(Heron_Decomp_RG_SWSI_Raw, "both")
 
 CombinedData <- Heron_Decomp_RG_SWSI_Raw
 
@@ -812,6 +762,7 @@ visreg(Heron_RG_AR1, "SWSI_values", gg = T) +
 # saving the plot as png 
 ggsave("Heron_RG_AR1result.png", path = "results/graphs/")
 
+0.0035
 # # Generalized least squares fit by maximum likelihood
 # Model: Discharge ~ SWSI_values 
 # Data: CombinedData 

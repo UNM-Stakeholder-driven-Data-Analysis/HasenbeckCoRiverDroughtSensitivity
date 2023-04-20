@@ -28,7 +28,10 @@ CleanHorsetooth$mo = lubridate::month(CleanHorsetooth$date_measured) # extract j
 
 HorsetoothMonthly <- CleanHorsetooth %>% #Sum daily data into monthly
   group_by(yr,mo) %>%
+  #Omit NAs, otherwise when you sum data to monthly, it will input an NA for all months that contain ANY NAs 
+  na.omit(Discharge) %>% 
   summarize(MonthlyDischarge = sum(Discharge))
+
 
 HorsetoothMonthly$Date = make_date(year = HorsetoothMonthly$yr, month = HorsetoothMonthly$mo, day = 1) #Re-format date column 
 

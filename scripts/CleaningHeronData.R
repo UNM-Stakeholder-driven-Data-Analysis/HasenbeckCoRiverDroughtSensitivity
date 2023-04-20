@@ -27,6 +27,8 @@ CleanHeron$mo = lubridate::month(CleanHeron$date_measured) # extract just the mo
 
 HeronMonthly <- CleanHeron %>% #Sum daily data into monthly
   group_by(yr,mo) %>%
+  #Omit NAs, otherwise when you sum data to monthly, it will input an NA for all months that contain ANY NAs 
+  na.omit(Discharge) %>% 
   summarize(MonthlyRelease = sum(Release))
 
 HeronMonthly$Date = make_date(year = HeronMonthly$yr, month = HeronMonthly$mo, day = 1) #Re-format date column 

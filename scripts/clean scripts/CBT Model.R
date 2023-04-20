@@ -38,7 +38,8 @@ SWSI_CO <- SWSI %>%
 HorsetoothReleases <- read_csv(file = "data/processed/HorsetoothLakesMonthlyReleases") %>%
   rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
 
-#There are no NAs but when I combined data with SWSI, I found data gaps. 
+sum(is.na(HorsetoothInterpolation$Discharge))
+#There are NAs when I combined data with SWSI. 
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 HorsetoothInterpolation <- full_join(HorsetoothReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
@@ -47,7 +48,6 @@ HorsetoothInterpolation <- full_join(HorsetoothReleases,SWSI_CO, by = "Date") %>
 plot(read.zoo(HorsetoothInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
 
 #Data starts in 1991-01-01. Missing data from 2012-06-01,2015-02-01. Eliminating 2012 on to have continous dataset
-
 HorsetoothInterpolation <- HorsetoothInterpolation %>%
   filter(Date >= "1991-01-01", Date <= "2012-06-01")
 
@@ -209,7 +209,7 @@ ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
 
 
 #decomposition introduced NAs. Replace them with via spine interpolation. 
-sum(is.na(AdamsDecomp$Discharge_data_DEs))
+sum(is.na(Discharge_data_DEs))
 ## fill gaps with spline interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
 # Make univariate zoo time series #

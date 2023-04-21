@@ -15,32 +15,30 @@ library(dataRetrieval)
 # p code is also in the gauge url:
   #https://waterdata.usgs.gov/monitoring-location/09050700/#parameterCode=00060&period=P7D
 
+#Blue River below Dillon
+siteNumber <- "05114000" #Gauge or sitenumber from USGS 
+DillonInfo <- readNWISsite(siteNumber)
 
-# Real-time discharge at a site
-DillonDischarge <- readNWISdata(sites = "05114000", #site or gauge number 
-                                service = "iv", 
-                                parameterCd = "00060", 
-                                startDate = ("1989-04-01"),
-                                endDate = ("2023-03-31"))
+#Parameter code - this tells R to call for discharge parameter.
+#See list of paramter codes here: https://nwis.waterdata.usgs.gov/dc/nwis/pmcode
+# p code is also in the gauge url:
+#https://waterdata.usgs.gov/monitoring-location/09050700/#parameterCode=00060&period=P7D
+parameterCd <- "00060" 
 
-
-dataTemp <- readNWISdata("05114000",
-                         parameterCd = "00060",
-                         service="iv") 
-
-
+# Raw daily data:
+DillonDischarge <- readNWISdv(
+  siteNumber, parameterCd,
+  "1989-03-11", "2023-03-31")
 
 
 ####Clean data####
 CleanDillon <- DillonDischarge %>% 
-  select(X_00060_00000, dateTime) %>%
-  rename(Discharge = X_00060_00000, 
-         date_measured = dateTime) #rename columns so they make sense 
+  select(X_00060_00003, Date) %>%
+  rename(Discharge = X_00060_00003, 
+         date_measured = Date) #rename columns so they make sense 
 
-CleanDillon$Discharge = (as.numeric(CleanDillon$Discharge)) #Formatting data
-?posi
-#Date format: 1994-10-01 06:00:00
-CleanDillon$date_measured = parse_date_time(CleanDillon$date_measured, c("%Y-%m-%d %H:%M:$S"), exact = T, tz="UTC")
+#USGS import automatially formats data correctly, so you don't have to worry about formatting it. 
+
 #### Sum daily data to monthly ####
 CleanDillon$yr = lubridate::year(CleanDillon$date_measured)# extract just the year
 CleanDillon$mo = lubridate::month(CleanDillon$date_measured) # extract just the month

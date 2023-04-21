@@ -34,6 +34,23 @@ SWSI_CO <- SWSI %>%
   group_by(Date) %>%
   summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
 
+##Dillon Reservoir ## 
+DillonReleases <- read_csv(file = "data/processed/DillonLakesMonthlyReleases") %>%
+  rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
+
+
+#There are NAs when I combined data with SWSI. 
+#Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
+#Then remove SWSI and interpolate missing values. 
+DillonInterpolation <- full_join(DillonReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
+  select(Date,Discharge) %>%
+  #Data starts in 1986-09-01, but year long data gap right before 1990. Continous data ends in 2023-03-01 
+  filter(Date >= "1989-03-01", Date <= "2023-03-01")
+
+sum(is.na(DillonInterpolation$Discharge))
+#0 NAs. 
+
+
 ##Gross Reservoir ## 
 GrossReleases <- read_csv(file = "data/processed/GrossLakesMonthlyReleases") %>%
   rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
@@ -272,6 +289,89 @@ ggplot(Gross_Decomp_filled, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 GrossDecomp <- Gross_Decomp_filled
+
+#### Dillon - Create time series and remove seasonality ####
+## prep time series ##
+##data explore## 
+hist(DillonInterpolation$Discharge, breaks = 100)
+
+sum(is.na(DillonInterpolation$Date))
+#No NAs
+
+sum(is.na(DillonInterpolation$Discharge))
+#0 NAs
+
+# check percentage of dataset with NAs 
+sum(is.na(DillonInterpolation))/nrow(DillonInterpolation)*100
+#0%
+
+
+# need to do this to prep for removing seasonality
+#set df:
+Discharge_data <- DillonInterpolation
+
+#Check time period!!!!!!
+# Starts 1989-03-01
+
+timeseries = ts(Discharge_data$Discharge, start = c(1989-03-01), frequency = 12)
+head(timeseries)
+
+par(mfrow=c(1,1))
+plot(timeseries)
+
+### remove seasonality ###
+
+# examine seasonality
+par(mfrow=c(3,1))
+plot(timeseries)
+Acf(timeseries)
+Pacf(timeseries)
+
+# decompose into additive components
+plot(decompose(timeseries))
+# decompose into multiplicative components
+plot(decompose(timeseries, type="multiplicative"))
+# extract components from multiplicative
+timeseries_decomp = decompose(timeseries, type="multiplicative")
+timeseries_trend = timeseries_decomp$trend
+timeseries_remainder = timeseries_decomp$random
+# save de-seasoned ts
+timeseries_DEs = timeseries_trend * timeseries_remainder
+
+# compare original to de-seasoned ts
+par(mfrow=c(3,2))
+plot(timeseries)
+plot(timeseries_DEs)
+Acf(timeseries)
+Acf(timeseries_DEs)
+Pacf(timeseries)
+Pacf(timeseries_DEs)
+
+# revert back to df
+Discharge_data_DEs = as.data.frame(timeseries_DEs)
+Discharge_data_DEs$Date = Discharge_data$Date
+names(Discharge_data_DEs) = c("Discharge","Date")
+Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
+Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
+
+#decomposition introduced 1 NAs. Replace them with via spine interpolation. 
+sum(is.na(Discharge_data_DEs))
+
+# revert back to df
+Dillon_Decomp_filled = as.data.frame(Discharge_data_DEs$Date)
+Dillon_Decomp_filled$Date = as.Date(rownames(Discharge_data_DEs)) 
+names(Dillon_Decomp_filled) = c(colnames(DillonReleases)[1],colnames(DillonReleases)[2])
+Dillon_Decomp_filled = Dillon_Decomp_filled %>% dplyr::select(Discharge, Date)
+
+
+#In case some interpolated values went negative, replace negative values with 0.
+Dillon_Decomp_filled$Discharge[Dillon_Decomp_filled$Discharge < 0] = 0 
+
+
+ggplot(Dillon_Decomp_filled, aes(x=Date, y=Discharge))+
+  geom_path() + geom_point() + theme_bw()
+
+DillonDecomp <- Dillon_Decomp_filled
 
 #### CO SWSI Prep for modeling ####
 

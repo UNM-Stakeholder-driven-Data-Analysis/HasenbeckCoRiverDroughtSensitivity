@@ -11,11 +11,12 @@ library(nlme)
 library(zoo)
 library(lme4)
 library(visreg)
+library(scales)
 
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-#library(beepr)
+library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
@@ -383,6 +384,127 @@ anyDuplicated(SWSI_Platte$Date)
 sum(is.na(SWSI_Platte))/nrow(SWSI_Platte)*100
 #No NAs! 
 
+#### Roberts - S Platte SWSI Model comparison #need to address spline  ####
+Roberts_Decomp_SP_SWSI_Raw <- full_join(RobertsDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data
+
+#POR for SWSI is different than Roberts. Remove dates where there are no Discharge values. 
+Roberts_Decomp_SP_SWSI_Raw <- na.trim(Roberts_Decomp_SP_SWSI_Raw)
+
+#Replace NA values with 0. Assumping this is multiplication error in decomposition. 
+Roberts_Decomp_SP_SWSI_Raw$Discharge[is.na(Roberts_Decomp_SP_SWSI_Raw$Discharge)] = 0 
+
+CombinedData <- Roberts_Decomp_SP_SWSI_Raw
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 1
+# middle is differencing data 1
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# fit some other candidate structures
+mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
+mod_AMRAp2 = gls(Discharge ~ SWSI_values * scaled_yr, data=CombinedData, correlation=corARMA(p=2), method="ML")
+mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
+mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
+mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
+#p = regressive order, #q is moving average order #41:40
+beep(sound = 1, expr = NULL)
+
+# compare models with AIC, AICc, and BIC
+# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
+# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
+bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2) #AMRAp2
+bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
+bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
+
+# dAIC df
+# mod_AMRAp2    0.0 5 
+# mod_AMRAp1q1  0.4 5 
+# mod_AMRAp3    1.8 6 
+# mod_AMRAp0q2  2.5 5 
+# mod_AMRAp1q2  3.1 6 
+# mod_Ar1      13.6 4 
+
+# dBIC df
+# mod_AMRAp2   0.0  5 
+# mod_AMRAp1q1 0.4  5 
+# mod_AMRAp0q2 2.5  5 
+# mod_AMRAp3   6.0  6 
+# mod_AMRAp1q2 7.3  6 
+# mod_Ar1      9.4  4 
+
+
+# extract and assess residuals: AMRAp2 - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp2, type = "normalized"), main="AMRAP2 model residuals")
+plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAP2  model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp2, type = "normalized"), main="AMRAP2  model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
+
+# extract and assess residuals: AMRAp1q1 - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1 model residuals")
+plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp1q1  model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1  model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
+
+# extract and assess residuals: AMRAp0q2 - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals")
+plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp0q2  model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
+
+# extract and assess residuals: Ar1 - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+# extract and assess residuals: AMRAp3  - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals")
+plot(resid(mod_AMRAp3 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp3   model residuals"); abline(h=0)
+qqnorm(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3 , type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3 , type = "normalized"))
+
+####AR1 and scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE)
+mod_Ar1 = gls(Discharge ~ SWSI_values + scaled_yr, data=CombinedData, correlation=corAR1(), method="ML")
+
+
+# extract and assess residuals: Ar1 - Has autocorrelation. 
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+
+
+
+
+
+
+
 #### Roberts - CO SWSI linear model w seasonal correction on Roberts data - ARIMA model p = 0.0174   ####
 
 Roberts_Decomp_CO_SWSI_Raw <- full_join(RobertsDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
@@ -457,87 +579,6 @@ visreg(Roberts_CO_P3, "SWSI_values", gg = T) +
 
 # saving the plot as png 
 ggsave("RobertsCOP3result.png", path = "results/graphs/")
-
-
-
-#### Roberts - S Platte SWSI linear model w seasonal correction on Roberts data - ARIMA model p = 0.0  ####
-
-Roberts_Decomp_SP_SWSI_Raw <- full_join(RobertsDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data
-
-#POR for SWSI is different than Roberts. Remove dates where there are no Discharge values. 
-Roberts_Decomp_SP_SWSI_Raw <- na.trim(Roberts_Decomp_SP_SWSI_Raw)
-
-#Replace NA values with 0. Assumping this is multiplication error in decomposition. 
-Roberts_Decomp_SP_SWSI_Raw$Discharge[is.na(Roberts_Decomp_SP_SWSI_Raw$Discharge)] = 0 
-
-CombinedData <- Roberts_Decomp_SP_SWSI_Raw
-
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-
-# run model 
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML") #selected structure
-
-
-# intervals() for nlme is equivelant to confint() for lm
-intervals(mod_AMRAp3)
-
-
-par(mfrow=c(1,1))
-visreg(mod_AMRAp3,"SWSI_values")
-
-Acf(resid(mod_AMRAp3))
-
-
-# extract and assess residuals: AMRAp3. p = 0.08
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
-par(mfrow=c(1,1))
-Acf(resid(mod_AMRAp3))
-summary(mod_AMRAp3)
-visreg(mod_AMRAp3)
-
-Roberts_SP_P3 <- mod_AMRAp3
-
-
-
-#Plot result 
-visreg(Roberts_SP_P3, "SWSI_values", gg = T) +
-  theme(axis.line = element_line(colour = "black")) +
-  xlab("SWSI Values") +
-  ylab("Predicted Discharge") +
-  ggtitle("Roberts Diversions by S. Platte SWSI")
-
-
-# saving the plot as png 
-ggsave("RobertsPlatteP3result.png", path = "results/graphs/")
-
 
 
 

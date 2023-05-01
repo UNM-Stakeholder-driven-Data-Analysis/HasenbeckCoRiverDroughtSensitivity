@@ -157,7 +157,7 @@ plot(timeseries)
 Acf(timeseries)
 Pacf(timeseries)
 
-<<<<<<< HEAD
+
 # decompose into additive components
 plot(decompose(timeseries))
 # decompose into multiplicative components
@@ -177,34 +177,32 @@ Acf(timeseries)
 Acf(timeseries_DEs)
 Pacf(timeseries)
 Pacf(timeseries_DEs)
-=======
+
 
 ####differencing ###
-<<<<<<< HEAD
+
 
 library(data.table)
 
 DT = data.table(Discharge_data)
->>>>>>> main
+
 
 timeseries_diff_df <- DT[ , list(Discharge,Date,Discharge_Diff=diff(Discharge, differences = 1, lag = 12))  ] %>%
   select(Date,Discharge_Diff) %>% 
   rename(Discharge = Discharge_Diff)
 
-<<<<<<< HEAD
+
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 AzoteaDecomp <- Discharge_data_DEs
 
 ####differencing ###
-=======
+
 timeseries_diff = ts(timeseries_diff_df$Discharge, start = c(1970-10-01), frequency = 12)
 
-=======
->>>>>>> main
+
 timeseries_diff<- diff(timeseries, differences = 1, lag = 12, ifna = "skip")
->>>>>>> main
 
 # compare original to de-seasoned ts
 par(mfrow=c(3,2))
@@ -230,10 +228,9 @@ ggplot(AzoteaDiversions, aes(x=Date, y=Discharge))+
 ## load data and format date/time ##
 HeronReleases <- read_csv(file = "data/processed/HeronMonthlyReleases") %>%
   rename("Discharge" = "Release")
-<<<<<<< HEAD
-=======
 
->>>>>>> main
+
+
 
 HeronReleases$Date = as.Date(HeronReleases$Date, "%y-%m-%d")
 
@@ -267,11 +264,11 @@ Heron_filled = as.data.frame(Heron_filled)
 Heron_filled$Date = HeronReleases$Date
 names(Heron_filled) = c(colnames(HeronReleases)[1],colnames(HeronReleases)[2])
 Heron_filled = Heron_filled %>% dplyr::select(Discharge, Date)
-<<<<<<< HEAD
-Heron_filled$Discharge[Heron_filled$Discharge < 0] = 0
-=======
 
->>>>>>> main
+Heron_filled$Discharge[Heron_filled$Discharge < 0] = 0
+
+
+
 # check NAs that are left
 sum(is.na(Heron_filled$Date))
 #No more NAs. 

@@ -354,24 +354,10 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
-#decomposition introduced 1 NAs. Replace them with via spine interpolation. 
-sum(is.na(Discharge_data_DEs))
+DillonDecomp <- Discharge_data_DEs
 
-# revert back to df
-Dillon_Decomp_filled = as.data.frame(Discharge_data_DEs$Date)
-Dillon_Decomp_filled$Date = as.Date(rownames(Discharge_data_DEs)) 
-names(Dillon_Decomp_filled) = c(colnames(DillonReleases)[1],colnames(DillonReleases)[2])
-Dillon_Decomp_filled = Dillon_Decomp_filled %>% dplyr::select(Discharge, Date)
-
-
-#In case some interpolated values went negative, replace negative values with 0.
-Dillon_Decomp_filled$Discharge[Dillon_Decomp_filled$Discharge < 0] = 0 
-
-
-ggplot(Dillon_Decomp_filled, aes(x=Date, y=Discharge))+
+ggplot(DillonDecomp, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
-
-DillonDecomp <- Dillon_Decomp_filled
 
 #### CO SWSI Prep for modeling ####
 
@@ -689,4 +675,138 @@ visreg(Gross_SP_AR1, "SWSI_values", gg = T) +
 ggsave("Gross_SP_AR1result.png", path = "results/graphs/")
 
 
+
+
+####Dillon - CO SWSI linear model w seasonal correction on HT data p = 0.5XXXX ####
+Dillon_Decomp_CO_SWSI_Raw <- full_join(DillonDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+
+#Twin lakes data period: 1986-10-01 to 2018-11-01
+#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+Dillon_Decomp_CO_SWSI_Raw = na.trim(Dillon_Decomp_CO_SWSI_Raw)
+
+CombinedData <- Dillon_Decomp_CO_SWSI_Raw
+
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 0
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# extract and assess residuals: Ar1 p = 0.63
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+summary(mod_Ar1)
+
+
+Dillon_CO_AR1 <- mod_Ar1
+
+#Plot result 
+visreg(Dillon_CO_AR1, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Outflow Discharge") +
+  ggtitle("Dillon Outflows by Colorado SWSI")
+
+
+# saving the plot as png 
+ggsave("Dillon_CO_AR1result.png", path = "results/graphs/")
+
+
+####Dillon - SP SWSI linear model w seasonal correction on HT data p = 0.5XXXX ####
+Dillon_Decomp_SP_SWSI_Raw <- full_join(DillonDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+
+#Twin lakes data period: 1986-10-01 to 2018-11-01
+#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+Dillon_Decomp_SP_SWSI_Raw = na.trim(Dillon_Decomp_SP_SWSI_Raw)
+
+CombinedData <- Dillon_Decomp_SP_SWSI_Raw
+
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+mod = lm(Discharge ~ SWSI_values, CombinedData)
+
+summary(mod)
+
+visreg(mod,"SWSI_values")
+
+confint(mod, "SWSI_values", level=0.95)
+
+
+## diagnostics ##
+Acf(resid(mod))
+forecast::checkresiduals(mod)
+#Breusch-Godfrey test for serial correlation of order up to 10
+#data:  Residuals
+#LM test = 150.13, df = 10, p-value < 2.2e-16
+
+#### test & calculate trends - nlme::gls ###
+
+# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
+
+# ask auto.arima what it thinks the autocorrelation structure is
+auto.arima(CombinedData$Discharge)
+#first number is autoregressive coef 0
+# middle is differencing data 0
+# last number is moving average term 2
+
+# fit AR(1) regression model with SWSI as a predictor
+mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+
+# extract and assess residuals: Ar1 p = 0.63
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+summary(mod_Ar1)
+
+
+Dillon_SP_AR1 <- mod_Ar1
+
+#Plot result 
+visreg(Dillon_SP_AR1, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Outflow Discharge") +
+  ggtitle("Dillon Outflows by S Platte SWSI")
+
+
+# saving the plot as png 
+ggsave("Dillon_SP_AR1result.png", path = "results/graphs/")
 

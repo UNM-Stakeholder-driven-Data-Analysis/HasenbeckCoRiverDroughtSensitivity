@@ -47,7 +47,7 @@ TwinInterpolation <- full_join(TwinReleases,SWSI_CO, by = "Date") %>%#Combining 
 sum(is.na(TwinInterpolation$Discharge)) #79 NAs 
 plot(read.zoo(TwinInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
 
-#Biiiiiiig data gap 1983-1986 and again right before 2018-11-01 
+#Biiiiiiig data gap 1983-1986 and again after 2018-11-01 
 #Setting new data period: 1986-10-01 to 2018-11-01
 
 TwinInterpolationShort <- TwinInterpolation %>%#Combining SWSI by basin with diversion data
@@ -60,11 +60,10 @@ par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap f
 # Make univariate zoo time series #
 ts.temp<-read.zoo(TwinInterpolationShort, index.column=1, format="%Y-%m-%d")
 
-# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
 plot(ts.temp)
 
 
-# Apply NA interpolation method: Using max gap of 7 days 
+# Apply NA interpolation method: Using max gap of 7 months 
 Twin_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 plot(Twin_filled)
 
@@ -103,7 +102,7 @@ BousteadDiversions <- read_csv(file = "data/processed/BousteadMonthlyDiversions"
 BousteadInterpolation <- full_join(BousteadDiversions,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
   select(Date,Discharge) %>%
   #Values before 1989 are funky, so going to reduce the years I am considering. 
-  #Am instead only going to use 1990-2023 to allow model stability. 
+  #Am instead only going to use 1990-2023 to keep continuous data. 
   filter(Date >= "1989-11-01") 
 
 ## fill gaps with spline interpolation ##
@@ -115,8 +114,8 @@ ts.temp<-read.zoo(BousteadInterpolation, index.column=1, format="%Y-%m-%d")
 # ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
 plot(ts.temp)
 
-# Apply NA interpolation method: Using max gap of 6 months
-Boustead_filled = na.spline(ts.temp, na.rm = T, maxgap = 6)
+# Apply NA interpolation method: Using max gap of 7 months
+Boustead_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 plot(Boustead_filled)
 
 

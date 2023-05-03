@@ -412,50 +412,6 @@ plot(resid(mod_Ar1 , type = "normalized")~c(1:length(CombinedData$SWSI_values)),
 qqnorm(resid(mod_Ar1 , type = "normalized"), main="Ar1   model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1 , type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1 , type = "normalized"))
 
-# extract and assess residuals: AMRAp1q1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1 model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp1q1  model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
-
-# extract and assess residuals: AMRAp0q2 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp0q2  model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
-
-# extract and assess residuals: Ar1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-
-# extract and assess residuals: AMRAp3  - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals")
-plot(resid(mod_AMRAp3 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp3   model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3 , type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3 , type = "normalized"))
-
-####AR1 and scaled data 
-CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
-CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE)
-mod_Ar1 = gls(Discharge ~ SWSI_values + scaled_yr, data=CombinedData, correlation=corAR1(), method="ML")
-
-
-# extract and assess residuals: Ar1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-
-
-
-
 
 
 
@@ -489,6 +445,10 @@ auto.arima(CombinedData$Discharge)
 #first number is autoregressive coef 1
 # middle is differencing data 1
 # last number is moving average term 2
+
+
+
+
 
 # fit AR(1) regression model with SWSI as a predictor
 mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
@@ -601,6 +561,30 @@ summary(mod)
 visreg(mod,"SWSI_values")
 
 confint(mod, "SWSI_values", level=0.95)
+
+
+####AR1 and scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
+#CombinedData$scaled_yr = as.list(CombinedData$scaled_yr)
+CombinedData$scaled_yr = as.numeric(CombinedData$scaled_yr)
+#mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~scaled_yr, correlation = corAR1(), data = CombinedData)
+#mod_Ar1 <- lme(Discharge ~ SWSI_values + scaled_yr, correlation = corAR1(), data = CombinedData)
+
+mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corAR1(), data = CombinedData)
+
+# extract and assess residuals: Ar1 . p = 0.08
+par(mfrow=c(1,3))
+Acf(resid(mod_Ar1 , type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals")
+plot(resid(mod_Ar1 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1 , type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1 , type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1 , type = "normalized"))
+par(mfrow=c(1,1))
+Acf(resid(mod_Ar1 ))
+summary(mod_Ar1 )
+visreg(mod_Ar1 )
+
+
 
 
 ## diagnostics ##

@@ -563,6 +563,7 @@ visreg(mod,"SWSI_values")
 confint(mod, "SWSI_values", level=0.95)
 
 
+
 ####AR1 and scaled data 
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
 CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect

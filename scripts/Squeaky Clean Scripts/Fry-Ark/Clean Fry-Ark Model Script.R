@@ -498,7 +498,7 @@ ggsave("BousteadArkp3result.png", path = "results/graphs/")
 
 
 
-####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0361 ####
+####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0124 ####
 Twin_Decomp_CO_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01
@@ -539,6 +539,63 @@ Acf(resid(mod_ARMAp1q1))
 summary(mod_ARMAp1q1) #p = 0.0124
 visreg(mod_ARMAp1q1)
 
+Twin_CO_p1q1 <- mod_ARMAp1q1
+
+
+#Good reduction of autocorrelation so will use p1q1 
+
+#Plot result 
+visreg(Twin_CO_p1q1, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Discharge") +
+  ggtitle("Twin Diversions by Colorado SWSI")
+
+
+# saving the plot as png 
+ggsave("TwinCOp1q1result.png", path = "results/graphs/")
+
+
+####Twin - Ark SWSI linear model w seasonal correction on Twin data p = 0.0714 ####
+Twin_Decomp_Ark_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+
+#Twin lakes data period: 1986-10-01 to 2018-11-01
+#POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
+Twin_Decomp_Ark_SWSI_Raw = na.trim(Twin_Decomp_Ark_SWSI_Raw)  
+sum(is.na(Twin_Decomp_Ark_SWSI_Raw)) #No more NAs 
+
+CombinedData <- Twin_Decomp_Ark_SWSI_Raw
+
+### linear trends ###
+
+# add simple time steps to df
+CombinedData$t = c(1:nrow(CombinedData))
+
+
+#Ask auto-arima best fit. 
+auto.arima(CombinedData$Discharge)
+#ARIMA(1,0,1)
+#first number is autoregressive coef 1
+# middle is differencing data 0
+#last number is moving average term 1
+
+#Run ARMA p1q1 with scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
+mod_ARMAp1q1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1, q=1), data = CombinedData) #run model
+
+# extract and assess residuals: AMRAp2. 
+par(mfrow=c(1,3))
+Acf(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals")
+plot(resid(mod_ARMAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q1, type = "normalized"))
+
+par(mfrow=c(1,1))
+Acf(resid(mod_ARMAp1q1))
+summary(mod_ARMAp1q1) #p = 0.0714
+visreg(mod_ARMAp1q1)
+
 Twin_Ark_p1q1 <- mod_ARMAp1q1
 
 
@@ -549,82 +606,9 @@ visreg(Twin_Ark_p1q1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
-  ggtitle("Twin Diversions by Colorado SWSI")
+  ggtitle("Twin Diversions by Arkansas SWSI")
 
 
 # saving the plot as png 
 ggsave("TwinArkp1q1result.png", path = "results/graphs/")
-
-
-####Twin - Ark SWSI linear model w seasonal correction on Twin data p = 0.2507 ####
-Twin_Decomp_Ark_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-
-#Twin lakes data period: 1986-10-01 to 2018-11-01
-#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
-Twin_Decomp_Ark_SWSI_Raw <- 
-  filter(Twin_Decomp_Ark_SWSI_Raw, Date >= "1986-10-01", Date <= "2018-11-01")  
-
-#Replace NA values with 0. Assumping this is multiplication error in decomposition. 
-Twin_Decomp_Ark_SWSI_Raw$Discharge[is.na(Twin_Decomp_Ark_SWSI_Raw$Discharge)] = 0 
-
-CombinedData <- Twin_Decomp_Ark_SWSI_Raw
-
-
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-# ask auto.arima what it thinks the autocorrelation structure is
-auto.arima(CombinedData$Discharge)
-#first number is autoregressive coef 0
-# middle is differencing data 0
-# last number is moving average term 2
-
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
-
-# extract and assess residuals: Ar1 p = 0.63
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-summary(mod_Ar1)
-
-
-Twin_Ark_AR1 <- mod_Ar1
-
-#Plot result 
-visreg(Twin_Ark_AR1, "SWSI_values", gg = T) +
-  theme(axis.line = element_line(colour = "black")) +
-  xlab("SWSI Values") +
-  ylab("Predicted Outflow Discharge") +
-  ggtitle("Twin Lakes Outflows by Arkansas SWSI")
-
-
-# saving the plot as png 
-ggsave("TwinLakes_Ark_AR1result.png", path = "results/graphs/")
-
-
 

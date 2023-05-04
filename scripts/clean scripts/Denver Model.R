@@ -15,13 +15,13 @@ library(visreg)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-library(beepr)
+#library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
 
 
-#### load data and format date/time ####
+#### load data and data prep ####
 
 #SWSI#
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
@@ -43,12 +43,46 @@ DillonReleases <- read_csv(file = "data/processed/DillonLakesMonthlyReleases") %
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 DillonInterpolation <- full_join(DillonReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date,Discharge) %>%
-  #Data starts in 1986-09-01, but year long data gap right before 1990. Continous data ends in 2023-03-01 
-  filter(Date >= "1989-03-01", Date <= "2023-03-01")
+  select(Date,Discharge) 
 
 sum(is.na(DillonInterpolation$Discharge))
-#0 NAs. 
+#93 NAs. 
+
+plot(read.zoo(DillonInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
+#Big outlier in 06/2011
+
+#Replace outlier with NA so it will interpolate. 
+DillonInterpolation$Discharge = replace(DillonInterpolation$Discharge, DillonInterpolation$Discharge > 110761, NA)
+
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+
+# Make univariate zoo time series #
+ts.temp<-read.zoo(DillonInterpolation, index.column=1, format="%Y-%m-%d")
+
+# Apply NA interpolation method: Using max gap of 12 months 
+Dillon_filled = na.spline(ts.temp, na.rm = T, maxgap = 11)
+
+
+plot(Dillon_filled)
+plot(ts.temp)
+
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to dfs
+Dillon_filled = as.data.frame(Dillon_filled)
+Dillon_filled$Date = DillonInterpolation$Date
+names(Dillon_filled) = c(colnames(DillonInterpolation)[2],colnames(DillonInterpolation)[1])
+Dillon_filled = na.trim(Dillon_filled, "both")
+
+Dillon_filled %>% dplyr::select(Discharge, Date)
+
+sum(is.na(Dillon_filled$Discharge))
+#No more NAs.
+
+Dillon_filled$Date = (as.Date(Dillon_filled$Date))
+
+#In case some interpolated values went negative, replace negative values with 0.
+Dillon_filled$Discharge[(Dillon_filled$Discharge < 0)] = 0 
 
 
 ##Gross Reservoir ## 
@@ -60,16 +94,18 @@ GrossReleases <- read_csv(file = "data/processed/GrossLakesMonthlyReleases") %>%
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 GrossInterpolation <- full_join(GrossReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date,Discharge) %>%
-#Data starts in 1986-09-01, but year long data gap right before 1990. Continous data ends in 2023-03-01 
-  filter(Date >= "1990-12-01", Date <= "2023-03-01")
+  select(Date,Discharge) 
 
 sum(is.na(GrossInterpolation$Discharge))
-#1 NAs. And one REALLY big outlier. 
-
+#79 NAs. 
 plot(read.zoo(GrossInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
+#data gap ~1990? And one REALLY big outlier. Occurs in 1997.   # %>%
+# #Data starts in 1986-09-01, but year long data gap right before 1990-12-01. Continous data ends in 2023-03-01 
+#I tried to fill two years of NAs, but resulted in unrealistic data pattern (no seasonal peak), so I am going to start my data after the gap.
 
-#Replace outlier with NA so it will interpolate. 
+GrossInterpolation <-  GrossInterpolation %>% filter(Date >= "1990-12-01") 
+
+# Replace outlier with NA so it will interpolate. 
 GrossInterpolation$Discharge = replace(GrossInterpolation$Discharge, GrossInterpolation$Discharge > 110761, NA)
 
 ## fill gaps with spline interpolation ##
@@ -78,8 +114,8 @@ par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap f
 # Make univariate zoo time series #
 ts.temp<-read.zoo(GrossInterpolation, index.column=1, format="%Y-%m-%d")
 
-# Apply NA interpolation method: Using max gap of 12 months 
-Gross_filled = na.spline(ts.temp, na.rm = T, maxgap = 12)
+# Apply NA interpolation method: Using max gap of 7 months 
+Gross_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
 
 plot(Gross_filled)
 plot(ts.temp)
@@ -90,11 +126,12 @@ Gross_filled = as.data.frame(Gross_filled)
 Gross_filled$Date = GrossInterpolation$Date
 Gross_filled$Date = GrossInterpolation$Date
 names(Gross_filled) = c(colnames(GrossInterpolation)[2],colnames(GrossInterpolation)[1])
-
+Gross_filled = na.trim(Gross_filled, "both")
 Gross_filled %>% dplyr::select(Discharge, Date)
 
+
 sum(is.na(Gross_filled$Discharge))
-#No more NAs.
+#0 NAs. 
 
 Gross_filled$Date = (as.Date(Gross_filled$Date))
 #In case some interpolated values went negative, replace negative values with 0.
@@ -107,35 +144,39 @@ RobertsDiversions <- read_csv(file = "data/processed/RobertsMonthlyDischarge")
 #There are no NAs but when I combined data with SWSI, I found data gaps. 
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
-#Data start: 	
+#Roberts Data start: 	
 #1963-10-01
 #Data end: 	
 #2023-03-01
-#SWSI has shorter period of record.1981-06-01 to 2022-08-01
 RobertsClean <- full_join(RobertsDiversions,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date, Discharge) %>% 
-  filter(Date >= "1981-06-01", Date <= "2022-08-01")
+  select(Date, Discharge) 
 
+sum(is.na(RobertsClean$Discharge))
+#There are no NAS in discharge. 
 
-sum(is.na(RobertsClean))
-#There are no nas. 
+plot(read.zoo(RobertsClean, index.column=1, format="%Y-%m-%d")) #plot as time series
+#The June 1 2011 outlier is here. But it looks reasonable compared to runoff in neighboring months. 
+#There is also a strange section with very little diversion between 1970-1980
+#I am not going to interpolate any data in this set. 
+
 
 #### Roberts Create time series and remove seasonality #### 
 
 #prepping to remove seasonality: 
 
 #set df:
-Discharge_data <- RobertsDiversions
+Discharge_data <- RobertsClean
 
 #create timeseries. IMPORTANT!!!!!!!!!! RESET START DATE TO DATA START DATE!!!! 
-#Roberts start date: 1981-06-01. Rembember I removed older data.
-timeseries = ts(Discharge_data$Discharge, start = c(1981-06-01), frequency = 12)
+#Roberts start date: 1963-10-01. 
+timeseries = ts(Discharge_data$Discharge, start = c(1963-10-01), frequency = 12)
 #SERIOUSLY CHECK DATES!!!!!! 
 
 head(timeseries)
 
 par(mfrow=c(1,1))
 plot(timeseries)
+
 
 ### remove seasonality ###
 
@@ -175,28 +216,34 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-#decomposition introduced NAs. Replace them with via spine interpolation. 
 sum(is.na(Discharge_data_DEs))
+#decomposition introduced 11 NAs. Tried to replace them with via spine interpolation. 
+
 ## fill gaps with spline interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
 # Make univariate zoo time series #
 ts.temp <- read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
 plot(ts.temp)
-# Apply NA interpolation method: Using max gap of 12 mon 
-Roberts_Decomp_filled = na.spline(ts.temp, na.rm = T, maxgap = 12)
+# Apply NA interpolation method: Using max gap of 11 mon 
+Roberts_Decomp_filled = na.spline(ts.temp, na.rm = T, maxgap = 11)
 plot(Roberts_Decomp_filled)
+
+#There is a weird section between 1970-1980, but remember this was in the raw data, too, so I am not going to worry about it.
+
 par(mfrow=c(1,1)) # reset plotting window
+
 # revert back to df
 Roberts_Decomp_filled = as.data.frame(Roberts_Decomp_filled)
 Roberts_Decomp_filled$Date = as.Date(rownames(Roberts_Decomp_filled)) 
 names(Roberts_Decomp_filled) = c(colnames(RobertsDiversions)[1],colnames(RobertsDiversions)[2])
 Roberts_Decomp_filled = Roberts_Decomp_filled %>% dplyr::select(Discharge, Date)
-
+Roberts_Decomp_filled = na.trim(Roberts_Decomp_filled)
 
 #In case some interpolated values went negative, replace negative values with 0.
 Roberts_Decomp_filled$Discharge[Roberts_Decomp_filled$Discharge < 0] = 0 
 
-
+sum(is.na(Roberts_Decomp_filled))
+#0NAs 
 RobertsDecomp <- Roberts_Decomp_filled
 
 #### Gross - Create time series and remove seasonality ####
@@ -293,27 +340,26 @@ GrossDecomp <- Gross_Decomp_filled
 #### Dillon - Create time series and remove seasonality ####
 ## prep time series ##
 ##data explore## 
-hist(DillonInterpolation$Discharge, breaks = 100)
+hist(Dillon_filled$Discharge, breaks = 100)
 
-sum(is.na(DillonInterpolation$Date))
+sum(is.na(Dillon_filled$Date))
 #No NAs
 
-sum(is.na(DillonInterpolation$Discharge))
+sum(is.na(Dillon_filled$Discharge))
 #0 NAs
 
 # check percentage of dataset with NAs 
-sum(is.na(DillonInterpolation))/nrow(DillonInterpolation)*100
+sum(is.na(Dillon_filled))/nrow(Dillon_filled)*100
 #0%
 
 
 # need to do this to prep for removing seasonality
 #set df:
-Discharge_data <- DillonInterpolation
+Discharge_data <- Dillon_filled
 
 #Check time period!!!!!!
-# Starts 1989-03-01
-
-timeseries = ts(Discharge_data$Discharge, start = c(1989-03-01), frequency = 12)
+# Starts 1981-06-01
+timeseries = ts(Discharge_data$Discharge, start = c(1981-06-01), frequency = 12)
 head(timeseries)
 
 par(mfrow=c(1,1))
@@ -354,9 +400,30 @@ names(Discharge_data_DEs) = c("Discharge","Date")
 Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% arrange(Date)
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
-DillonDecomp <- Discharge_data_DEs
+#decomposition introduced 1 NAs. Replace them with via spine interpolation. 
+sum(is.na(Discharge_data_DEs))
+## fill gaps with spline interpolation ##
+par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+# Make univariate zoo time series #
+ts.temp <- read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
+plot(ts.temp)
+# Apply NA interpolation method: Using max gap of 7 mon 
+Dillon_Decomp_filled = na.spline(ts.temp, na.rm = T, maxgap = 12)
+plot(Dillon_Decomp_filled)
+par(mfrow=c(1,1)) # reset plotting window
+# revert back to df
+Dillon_Decomp_filled = as.data.frame(Dillon_Decomp_filled)
+Dillon_Decomp_filled$Date = as.Date(rownames(Dillon_Decomp_filled)) 
+names(Dillon_Decomp_filled) = c(colnames(DillonReleases)[1],colnames(DillonReleases)[2])
+Dillon_Decomp_filled = Dillon_Decomp_filled %>% dplyr::select(Discharge, Date)
 
-ggplot(DillonDecomp, aes(x=Date, y=Discharge))+
+
+#In case some interpolated values went negative, replace negative values with 0.
+Dillon_Decomp_filled$Discharge[Dillon_Decomp_filled$Discharge < 0] = 0 
+
+sum(is.na(Dillon_Decomp_filled))
+
+ggplot(Dillon_Decomp_filled, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
 #### CO SWSI Prep for modeling ####
@@ -383,164 +450,55 @@ anyDuplicated(SWSI_Platte$Date)
 sum(is.na(SWSI_Platte))/nrow(SWSI_Platte)*100
 #No NAs! 
 
-#### Roberts - S Platte SWSI using NLME  ####
+#### Roberts - S Platte SWSI using NLME p = 0 ####
 Roberts_Decomp_SP_SWSI_Raw <- full_join(RobertsDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data
 
 #POR for SWSI is different than Roberts. Remove dates where there are no Discharge values. 
 Roberts_Decomp_SP_SWSI_Raw <- na.trim(Roberts_Decomp_SP_SWSI_Raw)
 
 CombinedData <- Roberts_Decomp_SP_SWSI_Raw
-
 
 ###linear trend### 
-
-####AR1 and scaled data 
-CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
-CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-#CombinedData$scaled_yr = as.list(CombinedData$scaled_yr)
-CombinedData$scaled_yr = as.numeric(CombinedData$scaled_yr)
-#mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~scaled_yr, correlation = corAR1(), data = CombinedData)
-#mod_Ar1 <- lme(Discharge ~ SWSI_values + scaled_yr, correlation = corAR1(), data = CombinedData)
-
-mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corAR1(), data = CombinedData)
-
-
-# extract and assess residuals: AR1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1 , type = "normalized"), main="Ar1  model residuals")
-plot(resid(mod_Ar1 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1   model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1 , type = "normalized"), main="Ar1   model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1 , type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1 , type = "normalized"))
-
-
-
-
-#### Roberts - S Platte SWSI Model comparison #need to address spline  ####
-Roberts_Decomp_SP_SWSI_Raw <- full_join(RobertsDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data
-
-#POR for SWSI is different than Roberts. Remove dates where there are no Discharge values. 
-Roberts_Decomp_SP_SWSI_Raw <- na.trim(Roberts_Decomp_SP_SWSI_Raw)
-
-#Replace NA values with 0. Assumping this is multiplication error in decomposition. 
-Roberts_Decomp_SP_SWSI_Raw$Discharge[is.na(Roberts_Decomp_SP_SWSI_Raw$Discharge)] = 0 
-
-CombinedData <- Roberts_Decomp_SP_SWSI_Raw
-
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-# ask auto.arima what it thinks the autocorrelation structure is
+#Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
+
+#ARIMA(1,1,2)
 #first number is autoregressive coef 1
 # middle is differencing data 1
-# last number is moving average term 2
+#last number is moving average term 2
 
-
-
-
-
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
-
-# fit some other candidate structures
-mod_AMRAp1q1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=1), method="ML")
-mod_AMRAp2 = gls(Discharge ~ SWSI_values * scaled_yr, data=CombinedData, correlation=corARMA(p=2), method="ML")
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML")
-mod_AMRAp0q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=0,q=2), method="ML") 
-mod_AMRAp1q2 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=1,q=2), method="ML") 
-#p = regressive order, #q is moving average order #41:40
-beep(sound = 1, expr = NULL)
-
-# compare models with AIC, AICc, and BIC
-# For small data, use AICc – the small sample correction which provides greater penalty for each parameter but approaches AIC as n becomes large. If it makes a difference, you should use it. 
-# For large data and especially time series data, consider BIC. BIC is better in situations where a false positive is more misleading than a false negative. Remember that false positives are more common with time series. 
-bbmle::AICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2) #AMRAp2
-bbmle::AICctab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
-bbmle::BICtab(mod_Ar1,mod_AMRAp1q1,mod_AMRAp2,mod_AMRAp3,mod_AMRAp0q2,mod_AMRAp1q2)
-
-# dAIC df
-# mod_AMRAp2    0.0 5 
-# mod_AMRAp1q1  0.4 5 
-# mod_AMRAp3    1.8 6 
-# mod_AMRAp0q2  2.5 5 
-# mod_AMRAp1q2  3.1 6 
-# mod_Ar1      13.6 4 
-
-# dBIC df
-# mod_AMRAp2   0.0  5 
-# mod_AMRAp1q1 0.4  5 
-# mod_AMRAp0q2 2.5  5 
-# mod_AMRAp3   6.0  6 
-# mod_AMRAp1q2 7.3  6 
-# mod_Ar1      9.4  4 
-
-
-# extract and assess residuals: AMRAp2 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp2, type = "normalized"), main="AMRAP2 model residuals")
-plot(resid(mod_AMRAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAP2  model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp2, type = "normalized"), main="AMRAP2  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp2, type = "normalized"))
-
-# extract and assess residuals: AMRAp1q1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1 model residuals")
-plot(resid(mod_AMRAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp1q1  model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp1q1, type = "normalized"), main="AMRAp1q1  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp1q1, type = "normalized"))
-
-# extract and assess residuals: AMRAp0q2 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals")
-plot(resid(mod_AMRAp0q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp0q2  model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp0q2, type = "normalized"), main="AMRAp0q2 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp0q2, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp0q2, type = "normalized"))
-
-# extract and assess residuals: Ar1 - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-
-# extract and assess residuals: AMRAp3  - Has autocorrelation. 
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals")
-plot(resid(mod_AMRAp3 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="AMRAp3   model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3 , type = "normalized"), main="AMRAp3  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3 , type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3 , type = "normalized"))
-
-####AR1 and scaled data 
+#Run ARMA p1q2 with scaled data 
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
-CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE)
-mod_Ar1 = gls(Discharge ~ SWSI_values + scaled_yr, data=CombinedData, correlation=corAR1(), method="ML")
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
+mod_ARMAp1q2 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1,q=2), data = CombinedData) #run model
 
-
-# extract and assess residuals: Ar1 - Has autocorrelation. 
+# extract and assess residuals: AMRAp1q2. 
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Ar1  model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main="Ar1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
+Acf(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI ARMAp1q2 model residuals")
+plot(resid(mod_ARMAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI ARMAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q2, type = "normalized"))
+
+#some temporal autocorrelation at lag 15 and 24. Ok to use. 
+summary(mod_ARMAp1q2)
+
+Roberts_SP_ARMAp1q2 <- mod_ARMAp1q2
+
+#Plot result 
+visreg(Roberts_SP_ARMAp1q2, "SWSI_values", gg = T) +
+  theme(axis.line = element_line(colour = "black")) +
+  xlab("SWSI Values") +
+  ylab("Predicted Outflow Discharge") +
+  ggtitle("Dillon Outflows by S Platte SWSI")
+
+
+# saving the plot as png 
+ggsave("Roberts_SP_ARMAp1q2result.png", path = "results/graphs/")
 
 
 
 
-
-
-
-#### Roberts - CO SWSI linear model w seasonal correction on Roberts data - ARIMA model p = 0.0174   ####
+#### Roberts - CO SWSI linear model w seasonal correction on Roberts data - ARIMA model p = 0.0123   ####
 
 Roberts_Decomp_CO_SWSI_Raw <- full_join(RobertsDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
 
@@ -548,154 +506,79 @@ Roberts_Decomp_CO_SWSI_Raw <- full_join(RobertsDecomp,SWSI_CO, by = "Date")  #Co
 Roberts_Decomp_CO_SWSI_Raw <- na.trim(Roberts_Decomp_CO_SWSI_Raw)
 
 CombinedData <- Roberts_Decomp_CO_SWSI_Raw
+###linear trend### 
+#Ask auto-arima best fit. 
+auto.arima(CombinedData$Discharge)
 
-### linear trends ###
+#ARIMA(1,1,2)
+#first number is autoregressive coef 1
+# middle is differencing data 1
+#last number is moving average term 2
 
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-
-####AR1 and scaled data 
+#Run ARMA p1q2 with scaled data 
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
 CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-#CombinedData$scaled_yr = as.list(CombinedData$scaled_yr)
-CombinedData$scaled_yr = as.numeric(CombinedData$scaled_yr)
-#mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~scaled_yr, correlation = corAR1(), data = CombinedData)
-#mod_Ar1 <- lme(Discharge ~ SWSI_values + scaled_yr, correlation = corAR1(), data = CombinedData)
+mod_ARMAp1q2 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1,q=2), data = CombinedData) #run model
 
-mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corAR1(), data = CombinedData)
-
-# extract and assess residuals: Ar1 . p = 0.08
+# extract and assess residuals: AMRAp1q2. 
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1 , type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals")
-plot(resid(mod_Ar1 , type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1 , type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAr1  model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1 , type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1 , type = "normalized"))
-par(mfrow=c(1,1))
-Acf(resid(mod_Ar1 ))
-summary(mod_Ar1 )
-visreg(mod_Ar1 )
+Acf(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI ARMAp1q2 model residuals")
+plot(resid(mod_ARMAp1q2, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI ARMAp1q2 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q2, type = "normalized"))
 
+#some temporal autocorrelation at lag 15 and 24. Ok to use. 
 
+Roberts_CO_ARMAp1q2 <- mod_ARMAp1q2
 
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-
-# run model 
-mod_AMRAp3 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corARMA(p=3), method="ML") #selected structure
-
-
-# intervals() for nlme is equivelant to confint() for lm
-intervals(mod_AMRAp3)
-
-
-par(mfrow=c(1,1))
-visreg(mod_AMRAp3,"SWSI_values")
-
-Acf(resid(mod_AMRAp3))
-
-
-# extract and assess residuals: AMRAp3. p = 0.08
-par(mfrow=c(1,3))
-Acf(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals")
-plot(resid(mod_AMRAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSAMRAp3 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_AMRAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_AMRAp3, type = "normalized"))
-par(mfrow=c(1,1))
-Acf(resid(mod_AMRAp3))
-summary(mod_AMRAp3)
-visreg(mod_AMRAp3)
-
-Roberts_CO_P3 <- mod_AMRAp3
-
-
+summary(mod_ARMAp1q2)
 
 #Plot result 
-visreg(Roberts_CO_P3, "SWSI_values", gg = T) +
+visreg(Roberts_CO_ARMAp1q2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Discharge") +
-  ggtitle("Roberts Diversions by Colorado SWSI")
+  ylab("Predicted Outflow Discharge") +
+  ggtitle("Dillon Outflows by S Platte SWSI")
 
 
 # saving the plot as png 
-ggsave("RobertsCOP3result.png", path = "results/graphs/")
+ggsave("Roberts_CO_ARMAp1q2result.png", path = "results/graphs/")
 
-
-
-####Gross - CO SWSI linear model w seasonal correction on HT data p = 0.0298 ####
+####  Gross - CO SWSI linear model w seasonal correction on HT data p = 0.0333 ####
 Gross_Decomp_CO_SWSI_Raw <- full_join(GrossDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
-#Twin lakes data period: 1986-10-01 to 2018-11-01
+
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
 Gross_Decomp_CO_SWSI_Raw = na.trim(Gross_Decomp_CO_SWSI_Raw)
 
 CombinedData <- Gross_Decomp_CO_SWSI_Raw
 
-
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-# ask auto.arima what it thinks the autocorrelation structure is
+###linear trend### 
+#Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
+
+#ARIMA(0,0,1)
 #first number is autoregressive coef 0
 # middle is differencing data 0
-# last number is moving average term 2
+#last number is moving average term 1
 
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+#Run AR1 with scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
 
-# extract and assess residuals: Ar1 p = 0.63
+#Scaled AR1 model
+mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corAR1(), data = CombinedData) #run model
+
+# extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI Ar1 model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI Ar1 model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-summary(mod_Ar1)
-
 
 Gross_CO_AR1 <- mod_Ar1
+
+summary(Gross_CO_AR1)
 
 #Plot result 
 visreg(Gross_CO_AR1, "SWSI_values", gg = T) +
@@ -709,10 +592,9 @@ visreg(Gross_CO_AR1, "SWSI_values", gg = T) +
 ggsave("Gross_CO_AR1result.png", path = "results/graphs/")
 
 
-####Gross - SP SWSI linear model w seasonal correction on HT data p = 0.0638 ####
+####Gross - SP SWSI linear model w seasonal correction on HT data p = 0.0663 ####
 Gross_Decomp_SP_SWSI_Raw <- full_join(GrossDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
-#Twin lakes data period: 1986-10-01 to 2018-11-01
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
 Gross_Decomp_SP_SWSI_Raw = na.trim(Gross_Decomp_SP_SWSI_Raw)
 
@@ -721,120 +603,85 @@ CombinedData <- Gross_Decomp_SP_SWSI_Raw
 
 ### linear trends ###
 
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-# ask auto.arima what it thinks the autocorrelation structure is
+###linear trend### 
+#Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
+
+#ARIMA(0,0,1)
 #first number is autoregressive coef 0
 # middle is differencing data 0
-# last number is moving average term 2
+#last number is moving average term 1
 
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+#Run AR1 with scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
 
-# extract and assess residuals: Ar1 p = 0.63
+#Scaled AR1 model
+mod_Ar1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corAR1(), data = CombinedData) #run model
+
+# extract and assess residuals: Ar1
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
+Acf(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI Ar1 model residuals")
+plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI Ar1 model residuals"); abline(h=0)
+qqnorm(resid(mod_Ar1, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-summary(mod_Ar1)
-
 
 Gross_SP_AR1 <- mod_Ar1
+summary(Gross_SP_AR1)
+
 
 #Plot result 
 visreg(Gross_SP_AR1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
-  ggtitle("Gross Outflows by S. Platte SWSI")
+  ggtitle("Gross Outflows by South Platte SWSI")
 
 
 # saving the plot as png 
 ggsave("Gross_SP_AR1result.png", path = "results/graphs/")
 
 
+####Dillon - CO SWSI linear model w seasonal correction on HT data p =  0.8546 ####
+Dillon_Decomp_CO_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
-
-####Dillon - CO SWSI linear model w seasonal correction on HT data p = 0.5XXXX ####
-Dillon_Decomp_CO_SWSI_Raw <- full_join(DillonDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
-
-#Twin lakes data period: 1986-10-01 to 2018-11-01
-#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+#POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
 Dillon_Decomp_CO_SWSI_Raw = na.trim(Dillon_Decomp_CO_SWSI_Raw)
 
 CombinedData <- Dillon_Decomp_CO_SWSI_Raw
 
 
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-# ask auto.arima what it thinks the autocorrelation structure is
+###linear trend### 
+#Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
-#first number is autoregressive coef 0
+
+#ARIMA(2,0,4)
+#first number is autoregressive coef 2
 # middle is differencing data 0
-# last number is moving average term 2
+#last number is moving average term 4
 
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+#Run ARMAp2q4 with scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
 
-# extract and assess residuals: Ar1 p = 0.63
+#Scaled ARMAp2q4 model
+mod_ARMAp2q4 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=2,q=4), data = CombinedData) #run model
+
+# extract and assess residuals: ARMAp2q4
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-summary(mod_Ar1)
+Acf(resid(mod_ARMAp2q4, type = "normalized"), main="Discharge adjusted, Raw SWSI ARMAp2q4 model residuals")
+plot(resid(mod_ARMAp2q4, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI ARMAp2q4 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp2q4, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp2q4, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp2q4, type = "normalized"))
 
+Dillon_CO_ARMAp2q4 <- mod_ARMAp2q4
 
-Dillon_CO_AR1 <- mod_Ar1
+summary(Dillon_CO_ARMAp2q4)
+
+#Signficant temporal autocorrelation. 
 
 #Plot result 
-visreg(Dillon_CO_AR1, "SWSI_values", gg = T) +
+visreg(Dillon_CO_ARMAp2q4, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
@@ -842,72 +689,55 @@ visreg(Dillon_CO_AR1, "SWSI_values", gg = T) +
 
 
 # saving the plot as png 
-ggsave("Dillon_CO_AR1result.png", path = "results/graphs/")
+ggsave("Dillon_CO_ARMAp2q4result.png", path = "results/graphs/")
 
 
-####Dillon - SP SWSI linear model w seasonal correction on HT data p = 0.5XXXX ####
-Dillon_Decomp_SP_SWSI_Raw <- full_join(DillonDecomp,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+####Dillon - SP SWSI linear model w seasonal correction on HT data p =  0.8546 ####
+Dillon_Decomp_SP_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_Platte, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
-#Twin lakes data period: 1986-10-01 to 2018-11-01
-#POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
+#POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
 Dillon_Decomp_SP_SWSI_Raw = na.trim(Dillon_Decomp_SP_SWSI_Raw)
 
 CombinedData <- Dillon_Decomp_SP_SWSI_Raw
 
 
-### linear trends ###
-
-# add simple time steps to df
-CombinedData$t = c(1:nrow(CombinedData))
-
-mod = lm(Discharge ~ SWSI_values, CombinedData)
-
-summary(mod)
-
-visreg(mod,"SWSI_values")
-
-confint(mod, "SWSI_values", level=0.95)
-
-
-## diagnostics ##
-Acf(resid(mod))
-forecast::checkresiduals(mod)
-#Breusch-Godfrey test for serial correlation of order up to 10
-#data:  Residuals
-#LM test = 150.13, df = 10, p-value < 2.2e-16
-
-#### test & calculate trends - nlme::gls ###
-
-# see package manual: https://cran.r-project.org/web/packages/nlme/nlme.pdf
-
-# ask auto.arima what it thinks the autocorrelation structure is
+###linear trend### 
+#Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
-#first number is autoregressive coef 0
-# middle is differencing data 0
-# last number is moving average term 2
 
-# fit AR(1) regression model with SWSI as a predictor
-mod_Ar1 = gls(Discharge ~ SWSI_values, data=CombinedData, correlation=corAR1(), method="ML")
+#ARIMA(2,1,4)
+#first number is autoregressive coef 2
+# middle is differencing data 1
+#last number is moving average term 4
 
-# extract and assess residuals: Ar1 p = 0.63
+#Run ARMAp2q4 with scaled data 
+CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
+CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
+
+#Scaled ARMAp2q4 model
+mod_ARMAp2q4 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=2,q=4), data = CombinedData) #run model
+
+# extract and assess residuals: ARMAp2q4
 par(mfrow=c(1,3))
-Acf(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals")
-plot(resid(mod_Ar1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals"); abline(h=0)
-qqnorm(resid(mod_Ar1, type = "normalized"), main=" Discharge adjusted, raw SWSI GLS Ar1model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_Ar1, type = "normalized"))$statistic,2))); qqline(resid(mod_Ar1, type = "normalized"))
-summary(mod_Ar1)
+Acf(resid(mod_ARMAp2q4, type = "normalized"), main="Discharge adjusted, Raw SWSI ARMAp2q4 model residuals")
+plot(resid(mod_ARMAp2q4, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI ARMAp2q4 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp2q4, type = "normalized"), main="Discharge adjusted, Raw SWSI p1q2 model residuals", pch=16, 
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp2q4, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp2q4, type = "normalized"))
 
+Dillon_SP_ARMAp2q4 <- mod_ARMAp2q4
 
-Dillon_SP_AR1 <- mod_Ar1
+summary(Dillon_SP_ARMAp2q4) #p=0.1564
+
+#Signficant temporal autocorrelation. 
 
 #Plot result 
-visreg(Dillon_SP_AR1, "SWSI_values", gg = T) +
+visreg(Dillon_SP_ARMAp2q4, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
-  ggtitle("Dillon Outflows by S Platte SWSI")
+  ggtitle("Dillon Outflows by South Platte SWSI")
 
 
 # saving the plot as png 
-ggsave("Dillon_SP_AR1result.png", path = "results/graphs/")
+ggsave("Dillon_SP_ARMAp2q4result.png", path = "results/graphs/")
 

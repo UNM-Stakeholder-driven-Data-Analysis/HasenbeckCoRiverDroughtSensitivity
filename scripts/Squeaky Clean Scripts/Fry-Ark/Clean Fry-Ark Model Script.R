@@ -63,8 +63,8 @@ ts.temp<-read.zoo(TwinInterpolationShort, index.column=1, format="%Y-%m-%d")
 plot(ts.temp)
 
 
-# Apply NA interpolation method: Using max gap of 7 months 
-Twin_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
+# Apply NA interpolation method: Using max gap of 12 months 
+Twin_filled = na.spline(ts.temp, na.rm = T, maxgap = 12)
 plot(Twin_filled)
 
 
@@ -295,8 +295,8 @@ par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap f
 ts.temp<-read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
 # ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
 plot(ts.temp)
-# Apply NA interpolation method: Using max gap of 7 days 
-Twin_Decomp = na.spline(ts.temp, na.rm = T, maxgap = 7)
+# Apply NA interpolation method: Using max gap of 12 months 
+Twin_Decomp = na.spline(ts.temp, na.rm = T, maxgap = 12)
 plot(Twin_Decomp)
 # revert back to df
 Twin_Decomp = as.data.frame(Twin_Decomp)

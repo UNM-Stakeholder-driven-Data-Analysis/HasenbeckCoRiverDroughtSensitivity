@@ -99,7 +99,7 @@ GrossInterpolation <- full_join(GrossReleases,SWSI_CO, by = "Date") %>%#Combinin
 sum(is.na(GrossInterpolation$Discharge))
 #79 NAs. 
 plot(read.zoo(GrossInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
-#data gap ~1990? And one REALLY big outlier. Occurs in 1997.   # %>%
+#data gap ~1990? And one REALLY big outlier. Occurs in 1997.   
 # #Data starts in 1986-09-01, but year long data gap right before 1990-12-01. Continous data ends in 2023-03-01 
 #I tried to fill two years of NAs, but resulted in unrealistic data pattern (no seasonal peak), so I am going to start my data after the gap.
 

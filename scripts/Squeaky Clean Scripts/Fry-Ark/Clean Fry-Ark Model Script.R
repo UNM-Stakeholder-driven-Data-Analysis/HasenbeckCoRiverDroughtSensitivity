@@ -27,7 +27,7 @@ library(visreg)
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
 SWSI$Date = as.Date.character(SWSI$Date, format = "%Y-%m-%d")
 
-#Pulling out Colorado SWSI. Will use this to interpolate diversions/outflows
+#Pulling out Colorado SWSI. Will use this to create date column to interpolate diversions/outflows
 SWSI_CO <- SWSI %>%
   dplyr::select(Date, Colorado) %>%
   rename("SWSI_values" = "Colorado") %>% 
@@ -340,7 +340,7 @@ anyDuplicated(SWSI_Ark$Date)
 sum(is.na(SWSI_Ark))/nrow(SWSI_Ark)*100
 #No NAs! 
 
-#### Boustead - CO SWSI linear model w seasonal correction on Boustead data and scaled yr - ARIMA model p= 0.8191 ####
+#### Boustead - CO SWSI linear model w seasonal correction on Boustead data and scaled yr - ARMA model p= 0.8191 ####
 
 Boustead_Decomp_CO_SWSI_Raw <- full_join(BousteadDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
 
@@ -416,7 +416,7 @@ visreg(Boustead_CO_p3, "SWSI_values", gg = T) +
 ggsave("BousteadCOp3result.png", path = "results/graphs/")
 
 
-#### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARIMA model p = 0.6917   ####
+#### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARMA model p = 0.6917   ####
 
 Boustead_Decomp_Ark_SWSI_Raw <- full_join(BousteadDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data
 

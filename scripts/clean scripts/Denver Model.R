@@ -21,7 +21,7 @@ library(visreg)
 
 
 
-#### load data and data prep ####
+#### load data ####
 
 #SWSI#
 SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
@@ -34,6 +34,7 @@ SWSI_CO <- SWSI %>%
   group_by(Date) %>%
   summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
 
+#### Interpolate missing values - Dillon Reservoir #### 
 ##Dillon Reservoir ## 
 DillonReleases <- read_csv(file = "data/processed/DillonLakesMonthlyReleases") %>%
   rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
@@ -54,14 +55,15 @@ plot(read.zoo(DillonInterpolation, index.column=1, format="%Y-%m-%d")) #plot as 
 #Replace outlier with NA so it will interpolate. 
 DillonInterpolation$Discharge = replace(DillonInterpolation$Discharge, DillonInterpolation$Discharge > 110761, NA)
 
-## fill gaps with spline interpolation ##
+## fill gaps with linear interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
 
 # Make univariate zoo time series #
+DillonInterpolation <- DillonInterpolation %>% arrange(Date)
 ts.temp<-read.zoo(DillonInterpolation, index.column=1, format="%Y-%m-%d")
 
 # Apply NA interpolation method: Using max gap of 12 months 
-Dillon_filled = na.spline(ts.temp, na.rm = T, maxgap = 11)
+Dillon_filled = na.approx(ts.temp, na.rm = T, maxgap = 11)
 
 
 plot(Dillon_filled)
@@ -81,10 +83,8 @@ sum(is.na(Dillon_filled$Discharge))
 
 Dillon_filled$Date = (as.Date(Dillon_filled$Date))
 
-#In case some interpolated values went negative, replace negative values with 0.
-Dillon_filled$Discharge[(Dillon_filled$Discharge < 0)] = 0 
 
-
+####Interpolate missing values - Gross Reservoir ####
 ##Gross Reservoir ## 
 GrossReleases <- read_csv(file = "data/processed/GrossLakesMonthlyReleases") %>%
   rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
@@ -137,7 +137,7 @@ Gross_filled$Date = (as.Date(Gross_filled$Date))
 #In case some interpolated values went negative, replace negative values with 0.
 Gross_filled$Discharge[(Gross_filled$Discharge < 0)] = 0 
 
-## Roberts ## 
+## Roberts #### 
 
 RobertsDiversions <- read_csv(file = "data/processed/RobertsMonthlyDischarge") 
 

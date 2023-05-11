@@ -524,7 +524,7 @@ gridExtra::grid.arrange(Roberts_SP_ARMAp1q2_CIplot, Roberts_CO_ARMAp1q2_CIplot, 
 # saving the plot as png 
 ggsave("Roberts_ARMAp1q2_boot.png", path = "results/graphs/")
 
-####  Gross - CO SWSI linear model w seasonal correction on HT data p = 0.494 ####
+####  Gross - CO SWSI linear model w seasonal correction on Gross data p = 0.0516 ####
 Gross_Decomp_CO_SWSI_Raw <- full_join(GrossDecomp,SWSI_CO, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 
@@ -577,7 +577,7 @@ plot(Gross_CO_ARMAp1q1_boot, "beta.SWSI_values")
 Gross_CO_ARMAp1q1_CIplot = plot(Gross_CO_ARMAp1q1_boot, "beta.SWSI_values")
 
 
-####Gross - SP SWSI linear model w seasonal correction on HT data p = 0.10 ####
+####Gross - SP SWSI linear model w seasonal correction on Gross data p = 0.1025 ####
 Gross_Decomp_SP_SWSI_Raw <- full_join(GrossDecomp,SWSI_Platte, by = "Date")  %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
@@ -639,7 +639,7 @@ gridExtra::grid.arrange(Gross_SP_ARMAp1q1_CIplot, Gross_CO_ARMAp1q1_CIplot, ncol
 # saving the plot as png 
 ggsave("Gross_ARMAp1q1_boot.png", path = "results/graphs/")
 
-####Dillon - CO SWSI linear model w seasonal correction on HT data p =  0.11 ####
+####Dillon - CO SWSI linear model w seasonal correction on Dillon data p =  0.1137 ####
 Dillon_Decomp_CO_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_CO, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
@@ -742,7 +742,7 @@ Dillon_CO_ARMAp3_CIplot = plot(Dillon_CO_ARMAp3_boot, "beta.SWSI_values")
 
 
 
-####Dillon - SP SWSI linear model w seasonal correction on HT data p = 0.0493 ####
+####Dillon - SP SWSI linear model w seasonal correction on Dillon data p = 0.0493 ####
 Dillon_Decomp_SP_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_Platte, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 

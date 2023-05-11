@@ -97,7 +97,7 @@ DillonInterpolation <- DillonInterpolation %>% arrange(Date)
 ts.temp<-read.zoo(DillonInterpolation, index.column=1, format="%Y-%m-%d")
 
 # Apply NA interpolation method: Using max gap of 12 months 
-Dillon_filled = na.approx(ts.temp, na.rm = T, maxgap = 11)
+Dillon_filled = na.approx(ts.temp, na.rm = T, maxgap = 12)
 
 
 plot(Dillon_filled)

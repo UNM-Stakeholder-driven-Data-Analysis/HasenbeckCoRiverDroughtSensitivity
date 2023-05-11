@@ -24,25 +24,58 @@ library(visreg)
 #### load data and format date/time ####
 
 #SWSI#
-SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T)
+SWSI = read.csv("data/processed/SWSI1981to2023.csv", header = T) %>% arrange(Date)
 SWSI$Date = as.Date.character(SWSI$Date, format = "%Y-%m-%d")
 
+##Twin Lakes ## 
+TwinReleases <- read_csv(file = "data/processed/TwinLakesMonthlyReleases") %>%
+  rename("Discharge" = "Release") %>% #using the same column name as in diversion data to simplify replication
+  arrange (Date) 
+
+## Boustead ## 
+BousteadDiversions <- read_csv(file = "data/processed/BousteadMonthlyDiversions")  %>% 
+  arrange(Date)
+
+#### CO SWSI Prep for modeling ####
 #Pulling out Colorado SWSI. Will use this to create date column to interpolate diversions/outflows
 SWSI_CO <- SWSI %>%
   dplyr::select(Date, Colorado) %>%
   rename("SWSI_values" = "Colorado") %>% 
   group_by(Date) %>%
-  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
+  #Some dates have two entries. Avg the duplicates here. 
+  summarize(SWSI_values=mean(SWSI_values)) %>% 
+  arrange (Date) 
 
-##Twin Lakes ## 
-TwinReleases <- read_csv(file = "data/processed/TwinLakesMonthlyReleases") %>%
-  rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
+# check for duplicate date/time stamps
+anyDuplicated(SWSI_CO$Date)
 
+# check percentage of dataset with NAs 
+sum(is.na(SWSI_CO))/nrow(SWSI_CO)*100
+#No NAs! 
+
+#### Arkansas SWSI - Prep for modeling ####
+## Pull out Ark data and and format date/time ##
+SWSI_Ark <- SWSI %>%
+  dplyr::select(Date, Arkansas) %>%
+  rename("SWSI_values" = "Arkansas") %>% 
+  group_by(Date) %>% 
+  summarize(SWSI_values=mean(SWSI_values)) %>% #Some dates have two entries. Avg the duplicates here. 
+  arrange(Date)
+
+# check for duplicate date/time stamps
+anyDuplicated(SWSI_Ark$Date)
+
+# check percentage of dataset with NAs 
+sum(is.na(SWSI_Ark))/nrow(SWSI_Ark)*100
+#No NAs! 
+
+
+#### Twin Lakes Data exploration and Interpolation ####
 #There are no NAs but when I combined data with SWSI, I found data gaps. 
 #Going to combine SWSI just to create a date column to find NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 TwinInterpolation <- full_join(TwinReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date,Discharge)
+  select(Date,Discharge) %>% arrange(Date)
 
 sum(is.na(TwinInterpolation$Discharge)) #79 NAs 
 plot(read.zoo(TwinInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
@@ -51,7 +84,7 @@ plot(read.zoo(TwinInterpolation, index.column=1, format="%Y-%m-%d")) #plot as ti
 #Setting new data period: 1986-10-01 to 2018-11-01
 
 TwinInterpolationShort <- TwinInterpolation %>%#Combining SWSI by basin with diversion data
-  filter(Date >= "1986-10-01", Date <= "2018-11-01")
+  filter(Date >= "1986-10-01", Date <= "2018-11-01") %>% arrange(Date)
 
 
 ## fill gaps with spline interpolation ##
@@ -63,23 +96,20 @@ ts.temp<-read.zoo(TwinInterpolationShort, index.column=1, format="%Y-%m-%d")
 plot(ts.temp)
 
 
-# Apply NA interpolation method: Using max gap of 12 months 
-Twin_filled = na.spline(ts.temp, na.rm = T, maxgap = 12)
+# Apply NA linear interpolation method: Using max gap of 12 months 
+Twin_filled = na.approx(ts.temp, na.rm = T, maxgap = 12)
 plot(Twin_filled)
-
-
 par(mfrow=c(1,1)) # reset plotting window
+
 # revert back to df
 Twin_filled = as.data.frame(Twin_filled)
-Twin_filled$Date = TwinInterpolationShort$Date
+Twin_filled$Date <- as.Date(rownames(Twin_filled))
 names(Twin_filled) = c(colnames(TwinReleases)[1],colnames(TwinReleases)[2])
-Twin_filled = Twin_filled %>% dplyr::select(Discharge, Date)
+Twin_filled = Twin_filled %>% dplyr::select(Discharge, Date) %>% arrange(Date)
 
 sum(is.na(Twin_filled$Discharge))
 #No more NAs.
 
-#some interpolated values went negative. Replace negative values with 0.
-Twin_filled$Discharge[Twin_filled$Discharge < 0] = 0 
 
 # check NAs that are left
 sum(is.na(Twin_filled$Discharge))
@@ -87,69 +117,38 @@ sum(is.na(Twin_filled$Discharge))
 
 
 
-
-
-
-
-
-## Boustead ## 
-
-BousteadDiversions <- read_csv(file = "data/processed/BousteadMonthlyDiversions")  
-
+#### Boustead Data exploration ####
 #There are no NAs but when I combined data with SWSI, I found data gaps. 
 #Going to combine SWSI just to create a date column to find NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 BousteadInterpolation <- full_join(BousteadDiversions,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date,Discharge) %>%
-  #Values before 1989 are funky, so going to reduce the years I am considering. 
-  #Am instead only going to use 1990-2023 to keep continuous data. 
-  filter(Date >= "1989-11-01") 
-
-## fill gaps with spline interpolation ##
-par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
+  select(Date,Discharge) %>% arrange(Date) 
 
 # Make univariate zoo time series #
 ts.temp<-read.zoo(BousteadInterpolation, index.column=1, format="%Y-%m-%d")
-
-# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
 plot(ts.temp)
 
-# Apply NA interpolation method: Using max gap of 7 months
-Boustead_filled = na.spline(ts.temp, na.rm = T, maxgap = 7)
-plot(Boustead_filled)
+#Values before 1989 are funky and gaps are too large to interpolate. 
+#Going to reduce the years I am considering to 1989-11-01 to present. 
+BousteadInterpolation <- BousteadInterpolation %>% filter(Date >= "1989-11-01") %>% 
+  arrange(Date) 
 
+#Once I filtered it, there were no more NAs. No interpolation needed. 
+sum(is.na(BousteadInterpolation))
 
-par(mfrow=c(1,1)) # reset plotting window
-# revert back to df
-Boustead_filled = as.data.frame(Boustead_filled)
-Boustead_filled$Date = BousteadInterpolation$Date
-names(Boustead_filled) = c(colnames(BousteadDiversions)[2],colnames(BousteadDiversions)[1])
-Boustead_filled = Boustead_filled %>% dplyr::select(Discharge, Date)
-
-sum(is.na(Boustead_filled$Discharge))
-#No more NAs.
-
-#some interpolated values went negative. Replace negative values with 0.
-Boustead_filled$Discharge[Boustead_filled$Discharge < 0] = 0 
-
-# check NAs that are left
-sum(is.na(Boustead_filled$Discharge))
-#No more NAs.
-
-
-
+Boustead_filled <- BousteadInterpolation
 
 #### Boustead - Create time series and remove seasonality ####
 
 ## prep time series ##
-sum(is.na(BousteadDiversions$Date))
+sum(is.na(Boustead_filled$Date))
 #No NAs
 
-sum(is.na(BousteadDiversions$Discharge))
+sum(is.na(Boustead_filled$Discharge))
 #0 NAs
 
 # check percentage of dataset with NAs 
-sum(is.na(BousteadDiversions))/nrow(BousteadDiversions)*100
+sum(is.na(Boustead_filled))/nrow(Boustead_filled)*100
 #0%
 
 
@@ -157,18 +156,12 @@ sum(is.na(BousteadDiversions))/nrow(BousteadDiversions)*100
 #prepping to remove seasonality: 
 
 #set df:
-Discharge_data <- Boustead_filled
+Discharge_data <- Boustead_filled %>% arrange(Date)
 
 #create timeseries. IMPORTANT!!!!!!!!!! RESET START DATE TO DATA START DATE!!!! 
 #Boustead start date: 1989-11-01. Rembember I removed older data.
-timeseries = ts(Discharge_data$Discharge, start = c(1989-11-01), frequency = 12)
+timeseries = ts(Discharge_data$Discharge, start = c(1989, 11), frequency = 12)
 #SERIOUSLY CHECK DATES!!!!!! 
-
-
-##Did you check the date??? ###
-#Are you SURE? 
-
-
 
 head(timeseries)
 
@@ -216,7 +209,6 @@ sum(is.na(Discharge_data_DEs))
 ggplot(Discharge_data_DEs, aes(x=Date, y=Discharge))+
   geom_path() + geom_point() + theme_bw()
 
-
 BousteadDecomp <- Discharge_data_DEs
 
 sum(is.na(BousteadDecomp$Date))
@@ -226,16 +218,16 @@ sum(is.na(BousteadDecomp$Date))
 ## prep time series ##
 
 ##data explore## 
-hist(TwinReleases$Discharge, breaks = 100)
+hist(Twin_filled$Discharge, breaks = 100)
 
-sum(is.na(TwinReleases$Date))
+sum(is.na(Twin_filled$Date))
 #No NAs
 
-sum(is.na(TwinReleases$Discharge))
-#0 NAs No need to spline interpolate. 
+sum(is.na(Twin_filled$Discharge))
+#0 NAs. 
 
 # check percentage of dataset with NAs 
-sum(is.na(TwinReleases))/nrow(TwinReleases)*100
+sum(is.na(Twin_filled))/nrow(Twin_filled)*100
 #0%
 
 
@@ -245,7 +237,7 @@ Discharge_data <- Twin_filled
 
 #Check time period!!!!!!
 #1986-10-01 to 2018-11-01
-timeseries = ts(Discharge_data$Discharge, start = c(1986-10-01), frequency = 12)
+timeseries = ts(Discharge_data$Discharge, start = c(1986, 10), frequency = 12)
 head(timeseries)
 
 par(mfrow=c(1,1))
@@ -287,62 +279,14 @@ Discharge_data_DEs = Discharge_data_DEs %>% dplyr::select(Date, Discharge) %>% a
 Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 
 sum(is.na(Discharge_data_DEs))
-#Decomposition introduced NAs. Spline interpolate them to fill them. 
+#No NAs. 
 
-## fill gaps with spline interpolation ##
-par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
-# Make univariate zoo time series #
-ts.temp<-read.zoo(Discharge_data_DEs, index.column=1, format="%Y-%m-%d")
-# ‘order.by’ are not unique warning suggests duplicate time stamps. I found that this is due to time zone changes, so nothing to worry about for regular time steps. 
-plot(ts.temp)
-# Apply NA interpolation method: Using max gap of 12 months 
-Twin_Decomp = na.spline(ts.temp, na.rm = T, maxgap = 12)
-plot(Twin_Decomp)
-# revert back to df
-Twin_Decomp = as.data.frame(Twin_Decomp)
-Twin_Decomp$Date = as.Date(rownames(Twin_Decomp)) 
-names(Twin_Decomp) = c(colnames(TwinReleases)[1],colnames(TwinReleases)[2])
-Twin_Decomp = Twin_Decomp %>% dplyr::select(Discharge, Date)
-
-sum(is.na(Twin_Decomp$Discharge))
-#No more NAs.
+TwinLakesDecomp <- Discharge_data_DEs %>% arrange(Date)
 
 
-ggplot(Twin_Decomp, aes(x=Date, y=Discharge))+
-  geom_path() + geom_point() + theme_bw()
+#### Boustead - CO SWSI linear model w seasonal correction on Boustead data and scaled yr - ARMA model p= 0.0016 ####
 
-ggplot(TwinReleases, aes(x=Date, y=Discharge))+
-  geom_path() + geom_point() + theme_bw()
-
-TwinLakesDecomp <- Twin_Decomp
-
-#### CO SWSI Prep for modeling ####
-
-# check for duplicate date/time stamps
-anyDuplicated(SWSI_CO$Date)
-
-# check percentage of dataset with NAs 
-sum(is.na(SWSI_CO))/nrow(SWSI_CO)*100
-#No NAs! 
-
-#### Arkansas SWSI - Prep for modeling ####
-## load data and format date/time ##
-SWSI_Ark <- SWSI %>%
-  dplyr::select(Date, Arkansas) %>%
-  rename("SWSI_values" = "Arkansas") %>% 
-  group_by(Date) %>% 
-  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
-
-# check for duplicate date/time stamps
-anyDuplicated(SWSI_Ark$Date)
-
-# check percentage of dataset with NAs 
-sum(is.na(SWSI_Ark))/nrow(SWSI_Ark)*100
-#No NAs! 
-
-#### Boustead - CO SWSI linear model w seasonal correction on Boustead data and scaled yr - ARMA model p= 0.8191 ####
-
-Boustead_Decomp_CO_SWSI_Raw <- full_join(BousteadDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data
+Boustead_Decomp_CO_SWSI_Raw <- full_join(BousteadDecomp,SWSI_CO, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data
 
 #POR for Boustead data is older than for SWSI. Remove dates where there are no SWSI values. 
 Boustead_Decomp_CO_SWSI_Raw  = na.trim(Boustead_Decomp_CO_SWSI_Raw, "both")
@@ -350,7 +294,7 @@ Boustead_Decomp_CO_SWSI_Raw  = na.trim(Boustead_Decomp_CO_SWSI_Raw, "both")
 sum(is.na(Boustead_Decomp_CO_SWSI_Raw))
 #No NAs
 
-CombinedData <- Boustead_Decomp_CO_SWSI_Raw
+CombinedData <- Boustead_Decomp_CO_SWSI_Raw %>% arrange(Date)
 
 ### linear trends ###
 # add simple time steps to df
@@ -375,37 +319,17 @@ plot(resid(mod_ARMAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)
 qqnorm(resid(mod_ARMAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp2, type = "normalized"))
 
+#Autocorrelation at lag 24, Under 0.15. Ok to use. 
+
 par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp2))
-summary(mod_ARMAp2) #p = 0.8172
+summary(mod_ARMAp2) 
 visreg(mod_ARMAp2)
 
 Boustead_CO_p2 <- mod_ARMAp2
 
 
-#Run ARMA p3 with scaled data 
-CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
-CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-mod_ARMAp3 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=3), data = CombinedData) #run model
-
-# extract and assess residuals: AMRAp3. p = 0.8191
-par(mfrow=c(1,3))
-Acf(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals")
-plot(resid(mod_ARMAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp3, type = "normalized"))
-
-par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp3))
-summary(mod_ARMAp3) #p = 0.3511
-visreg(mod_ARMAp3)
-
-Boustead_CO_p3 <- mod_ARMAp3
-
-#P2 has stronger autocorrelation at lag 2 compared to P3, so will use P3 for results. 
-
 #Plot result 
-visreg(Boustead_CO_p3, "SWSI_values", gg = T) +
+visreg(Boustead_CO_p2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
@@ -413,33 +337,35 @@ visreg(Boustead_CO_p3, "SWSI_values", gg = T) +
 
 
 # saving the plot as png 
-ggsave("BousteadCOp3result.png", path = "results/graphs/")
+ggsave("BousteadCOp2result.png", path = "results/graphs/")
+
+# bootstrap confidence intervals
+Boustead_CO_p2_boot<-lmeresampler::bootstrap(model = Boustead_CO_p2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
+Boustead_CO_p2_CIs = confint(Boustead_CO_p2_boot, type="norm",level = 0.95)
+Boustead_CO_p2_CIplot = plot(Boustead_CO_p2_boot, "beta.SWSI_values")
+Boustead_CO_p2_CIplot_custom = Boustead_CO_p2_CIplot + ggtitle("Boustead vs Colorado SWSI") + xlab("beta SWSI values")
+plot(Boustead_CO_p2_CIplot_custom)
+
 
 
 #### Boustead - Ark SWSI linear model w seasonal correction on Boustead data - ARMA model p = 0.6917   ####
 
-Boustead_Decomp_Ark_SWSI_Raw <- full_join(BousteadDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data
+Boustead_Decomp_Ark_SWSI_Raw <- full_join(BousteadDecomp,SWSI_Ark, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data
 
 #POR for Boustead data is different than for SWSI. Remove dates where there are no SWSI values. 
 Boustead_Decomp_Ark_SWSI_Raw  = na.trim(Boustead_Decomp_Ark_SWSI_Raw, "both")
 
 sum(is.na(Boustead_Decomp_Ark_SWSI_Raw))
+#No nas. 
 
-
-CombinedData <- Boustead_Decomp_Ark_SWSI_Raw
+CombinedData <- Boustead_Decomp_Ark_SWSI_Raw %>% arrange(Date)
 
 ### linear trends ###
 
 # add simple time steps to df
 CombinedData$t = c(1:nrow(CombinedData))
 
-#Ask auto-arima best fit. 
-auto.arima(CombinedData$Discharge)
-#ARIMA(0,0,2)
-#first number is autoregressive coef 0
-# middle is differencing data 0
-#last number is moving average term 2
-
+#use arma p2, same as boustead - colorado. 
 #Run ARMA p2 with scaled data 
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
 CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
@@ -452,37 +378,16 @@ plot(resid(mod_ARMAp2, type = "normalized")~c(1:length(CombinedData$SWSI_values)
 qqnorm(resid(mod_ARMAp2, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp2 model residuals", pch=16, 
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp2, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp2, type = "normalized"))
 
+#Autocorrelation at lag 24. Below 0.15. Ok to use. 
+
 par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp2))
-summary(mod_ARMAp2) #p = 0.8172
+summary(mod_ARMAp2) 
 visreg(mod_ARMAp2)
 
 Boustead_Ark_p2 <- mod_ARMAp2
 
-
-#Run ARMA p3 with scaled data 
-CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
-CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-mod_ARMAp3 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=3), data = CombinedData) #run model
-
-# extract and assess residuals: AMRAp3. p = 0.8191
-par(mfrow=c(1,3))
-Acf(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals")
-plot(resid(mod_ARMAp3, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals"); abline(h=0)
-qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp3 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp3, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp3, type = "normalized"))
-
-par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp3))
-summary(mod_ARMAp3) #p = 0.8191
-visreg(mod_ARMAp3)
-
-Boustead_Ark_p3 <- mod_ARMAp3
-
-#Stronger autocorrelation at lag 2 compared to P3, so will use P3 for results. 
-
 #Plot result 
-visreg(Boustead_Ark_p3, "SWSI_values", gg = T) +
+visreg(Boustead_Ark_p2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
@@ -490,11 +395,20 @@ visreg(Boustead_Ark_p3, "SWSI_values", gg = T) +
 
 
 # saving the plot as png 
-ggsave("BousteadArkp3result.png", path = "results/graphs/")
+ggsave("BousteadArkp2result.png", path = "results/graphs/")
 
+# bootstrap confidence intervals
+Boustead_Ark_p2_boot<-lmeresampler::bootstrap(model = Boustead_Ark_p2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
+Boustead_Ark_p2_CIs = confint(Boustead_Ark_p2_boot, type="norm",level = 0.95)
+Boustead_Ark_p2_CIplot = plot(Boustead_Ark_p2_boot, "beta.SWSI_values")
+Boustead_Ark_p2_CIplot_custom = Boustead_Ark_p2_CIplot + ggtitle("Boustead vs Arkansas SWSI") + xlab("beta SWSI values")
+plot(Boustead_Ark_p2_CIplot_custom)
 
+#Boustead - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
+gridExtra::grid.arrange(Boustead_Ark_p2_CIplot_custom, Boustead_CO_p2_CIplot_custom, ncol=1)
 
-
+#save plots
+ggsave("Boustead_p2_boot.png", path = "results/graphs/")
 
 
 ####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0124 ####
@@ -505,7 +419,7 @@ Twin_Decomp_CO_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_CO, by = "Date")  #Com
 Twin_Decomp_CO_SWSI_Raw  = na.trim(Twin_Decomp_CO_SWSI_Raw, "both")
 sum(is.na(Twin_Decomp_CO_SWSI_Raw)) #No NAs. 
 
-CombinedData <- Twin_Decomp_CO_SWSI_Raw
+CombinedData <- Twin_Decomp_CO_SWSI_Raw %>% arrange(Date)
 
 
 ### linear trends ###
@@ -516,35 +430,34 @@ CombinedData$t = c(1:nrow(CombinedData))
 
 #Ask auto-arima best fit. 
 auto.arima(CombinedData$Discharge)
-#ARIMA(1,0,1)
+#ARIMA(1,0,0)
 #first number is autoregressive coef 1
 # middle is differencing data 0
-#last number is moving average term 1
+#last number is moving average term 0
 
-#Run ARMA p1q1 with scaled data 
+#Run ARMA p1 with scaled data
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
 CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-mod_ARMAp1q1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1, q=1), data = CombinedData) #run model
+mod_ARMAp1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1, q=0), data = CombinedData) #run model
 
-# extract and assess residuals: AMRAp2. 
+# extract and assess residuals: AMRAp1.
 par(mfrow=c(1,3))
-Acf(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals")
-plot(resid(mod_ARMAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals"); abline(h=0)
-qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q1, type = "normalized"))
+Acf(resid(mod_ARMAp1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals")
+plot(resid(mod_ARMAp1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals", pch=16,
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1, type = "normalized"))
+
+#Very little autocorrelation at lag 3 and 22. Ok to use. 
 
 par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp1q1))
-summary(mod_ARMAp1q1) #p = 0.0124
-visreg(mod_ARMAp1q1)
+summary(mod_ARMAp1) #p = 0.0066
+visreg(mod_ARMAp1)
 
-Twin_CO_p1q1 <- mod_ARMAp1q1
+Twin_CO_p1 <- mod_ARMAp1
 
-
-#Good reduction of autocorrelation so will use p1q1 
 
 #Plot result 
-visreg(Twin_CO_p1q1, "SWSI_values", gg = T) +
+visreg(Twin_CO_p1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
@@ -552,11 +465,20 @@ visreg(Twin_CO_p1q1, "SWSI_values", gg = T) +
 
 
 # saving the plot as png 
-ggsave("TwinCOp1q1result.png", path = "results/graphs/")
+ggsave("TwinCOp1result.png", path = "results/graphs/")
+
+
+# bootstrap confidence intervals
+Twin_CO_p1_boot<-lmeresampler::bootstrap(model = Twin_CO_p1, .f = fixef, type = "reb", B = 1000, reb_type = 2)
+Twin_CO_p1_CIs = confint(Twin_CO_p1_boot, type="norm",level = 0.95)
+Twin_CO_p1_CIplot = plot(Twin_CO_p1_boot, "beta.SWSI_values")
+Twin_CO_p1_CIplot_custom = Twin_CO_p1_CIplot + ggtitle("Twin vs Colorado SWSI") + xlab("beta SWSI values")
+plot(Twin_CO_p1_CIplot_custom)
 
 
 ####Twin - Ark SWSI linear model w seasonal correction on Twin data p = 0.0714 ####
-Twin_Decomp_Ark_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_Ark, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+Twin_Decomp_Ark_SWSI_Raw <- full_join(TwinLakesDecomp,SWSI_Ark, by = "Date")  %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
+
 
 #Twin lakes data period: 1986-10-01 to 2018-11-01
 #POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
@@ -570,38 +492,28 @@ CombinedData <- Twin_Decomp_Ark_SWSI_Raw
 # add simple time steps to df
 CombinedData$t = c(1:nrow(CombinedData))
 
-
-#Ask auto-arima best fit. 
-auto.arima(CombinedData$Discharge)
-#ARIMA(1,0,1)
-#first number is autoregressive coef 1
-# middle is differencing data 0
-#last number is moving average term 1
-
-#Run ARMA p1q1 with scaled data 
+#Run ARMA p1 with scaled data
 CombinedData$yr = lubridate::year(CombinedData$Date)# extract just the year
 CombinedData$scaled_yr = scale(CombinedData$yr, center = TRUE, scale = FALSE) #scale year to a 0 mean to incorporate as random effect
-mod_ARMAp1q1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1, q=1), data = CombinedData) #run model
+mod_ARMAp1 <- lme(Discharge ~ SWSI_values, random = ~1 | scaled_yr, correlation = corARMA(p=1, q=0), data = CombinedData) #run model
 
-# extract and assess residuals: AMRAp2. 
+# extract and assess residuals: AMRAp1.
 par(mfrow=c(1,3))
-Acf(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals")
-plot(resid(mod_ARMAp1q1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals"); abline(h=0)
-qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1q1 model residuals", pch=16, 
-       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q1, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q1, type = "normalized"))
+Acf(resid(mod_ARMAp1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals")
+plot(resid(mod_ARMAp1, type = "normalized")~c(1:length(CombinedData$SWSI_values)), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals"); abline(h=0)
+qqnorm(resid(mod_ARMAp1, type = "normalized"), main="Discharge adjusted, Raw SWSI GLSARMAp1 model residuals", pch=16,
+       xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1, type = "normalized"))
+
+#No autocorrelation woohooo!!! 
 
 par(mfrow=c(1,1))
-Acf(resid(mod_ARMAp1q1))
-summary(mod_ARMAp1q1) #p = 0.0714
-visreg(mod_ARMAp1q1)
+summary(mod_ARMAp1) #p = 0.0247
+visreg(mod_ARMAp1)
 
-Twin_Ark_p1q1 <- mod_ARMAp1q1
-
-
-#Good reduction of autocorrelation so will use p1q1 
+Twin_Ark_p1 <- mod_ARMAp1
 
 #Plot result 
-visreg(Twin_Ark_p1q1, "SWSI_values", gg = T) +
+visreg(Twin_Ark_p1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
@@ -609,5 +521,15 @@ visreg(Twin_Ark_p1q1, "SWSI_values", gg = T) +
 
 
 # saving the plot as png 
-ggsave("TwinArkp1q1result.png", path = "results/graphs/")
+ggsave("TwinArkp1result.png", path = "results/graphs/")
+
+# bootstrap confidence intervals
+Twin_Ark_p1_boot<-lmeresampler::bootstrap(model = Twin_Ark_p1, .f = fixef, type = "reb", B = 1000, reb_type = 2)
+Twin_Ark_p1_CIs = confint(Twin_Ark_p1_boot, type="norm",level = 0.95)
+Twin_Ark_p1_CIplot = plot(Twin_Ark_p1_boot, "beta.SWSI_values")
+Twin_Ark_p1_CIplot_custom = Twin_Ark_p1_CIplot + ggtitle("Twin vs Arkansas SWSI") + xlab("beta SWSI values")
+plot(Twin_Ark_p1_CIplot_custom)
+
+#Twin - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
+gridExtra::grid.arrange(Twin_Ark_p1_CIplot_custom, Twin_CO_p1_CIplot_custom, ncol=1)
 

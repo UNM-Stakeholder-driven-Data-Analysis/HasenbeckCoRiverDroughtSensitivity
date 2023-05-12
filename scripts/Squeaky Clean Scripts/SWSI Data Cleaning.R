@@ -97,12 +97,6 @@ SWSIdataexplore$basin = as.factor(SWSIdataexplore$basin)
 
 #### describe dataset size and structure ####
 
-SWSIdataexplore <- SWSIdataexplore %>%
-  pivot_longer(cols = "Gunnison":"San_Juan", 
-               names_to = "basin",
-               values_to = "SWSI")
-
-
 head(SWSIdataexplore)
 #Date, single SWSI observation sorted by basin. 
 
@@ -225,7 +219,7 @@ summary(SWSIdataexplore_r$SWSI)
 
 ####None of the data is normal, but all follows a similar pattern. #### 
 
-####distributions without normalization####
+####distributions####
 temp = SWSIdataexplore_r
 qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
 
@@ -265,46 +259,6 @@ qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="G
 #data:  temp$SWSI[temp$basin == "Gunnison"]
 #W = 0.95845, p-value = 8.386e-11
 
-
-####distributions with normalization####
-temp = SWSInorm
-qqPlot(temp$SWSI); shapiro.test(temp$SWSI) # normal
-View(temp)
-
-qqPlot(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]); shapiro.test(temp$SWSI[temp$basin=="Yampa_White_N_Platte"]) 
-#Shapiro-Wilk normality test Yampa
-#data:  temp$SWSI[temp$basin == "Yampa_White_N_Platte"]
-#W = 0.94996, p-value = 4.212e-12
-
-qqPlot(temp$SWSI[temp$basin=="Rio_Grande"]); shapiro.test(temp$SWSI[temp$basin=="Rio_Grande"]) 
-#Shapiro-Wilk normality test RG
-#Shapiro-Wilk normality test
-#data:  temp$SWSI[temp$basin == "Rio_Grande"]
-#W = 0.97476, p-value = 1.058e-07
-
-
-qqPlot(temp$SWSI[temp$basin=="Arkansas"]); shapiro.test(temp$SWSI[temp$basin=="Arkansas"]) 
-#[1] 275  32
-#Shapiro-Wilk normality test Arkansas
-#data:  temp$SWSI[temp$basin == "Arkansas"]
-#W = 0.97526, p-value = 1.364e-07
-
-qqPlot(temp$SWSI[temp$basin=="South_Platte"]); shapiro.test(temp$SWSI[temp$basin=="South_Platte"]) 
-#Shapiro-Wilk normality test
-#data:  temp$SWSI[temp$basin == "South_Platte"]
-#W = 0.9485, p-value = 2.513e-12
-
-qqPlot(temp$SWSI[temp$basin=="San_Juan"]); shapiro.test(temp$SWSI[temp$basin=="San_Juan"]) 
-#[1] 253 254
-#Shapiro-Wilk normality test
-#data:  temp$SWSI[temp$basin == "San_Juan"]
-#W = 0.97125, p-value = 1.872e-08
-
-qqPlot(temp$SWSI[temp$basin=="Gunnison"]); shapiro.test(temp$SWSI[temp$basin=="Gunnison"]) 
-#[1] 500 501
-#Shapiro-Wilk normality test
-#data:  temp$SWSI[temp$basin == "Gunnison"]
-#W = 0.95845, p-value = 8.386e-11
 
 #### Making histogram ####
 #non-normalized data 

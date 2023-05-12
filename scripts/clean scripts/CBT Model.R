@@ -32,26 +32,43 @@ SWSI_CO <- SWSI %>%
   dplyr::select(Date, Colorado) %>%
   rename("SWSI_values" = "Colorado") %>% 
   group_by(Date) %>%
-  summarize(SWSI_values=mean(SWSI_values)) #Some dates have two entries. Avg the duplicates here. 
+  summarize(SWSI_values=mean(SWSI_values)) %>% arrange(Date) #Some dates have two entries. Avg the duplicates here. 
 
 ##Horsetooth Reservoir ## 
 HorsetoothReleases <- read_csv(file = "data/processed/HorsetoothLakesMonthlyReleases") %>%
-  rename("Discharge" = "Release") #using the same column name as in diversion data to simplify replication
+  rename("Discharge" = "Release") %>% arrange(Date) #using the same column name as in diversion data to simplify replication
+HorsetoothReleases$Discharge = as.numeric(HorsetoothReleases$Discharge)
+HorsetoothReleases$Date = as.Date(HorsetoothReleases$Date)
 
-sum(is.na(HorsetoothInterpolation$Discharge))
+#AdamsDiversions# 
+AdamsDiversions <- read_csv(file = "data/processed/AdamsMonthlyDischarge") %>% arrange(Date)
+
+
+####Horesetooth Interpolation###
+sum(is.na(HorsetoothReleases$Discharge))
 #There are NAs when I combined data with SWSI. 
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.
 #Then remove SWSI and interpolate missing values. 
 HorsetoothInterpolation <- full_join(HorsetoothReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
-  select(Date,Discharge)
+  select(Date,Discharge) %>% arrange(Date)
 
 plot(read.zoo(HorsetoothInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
-
 #Data starts in 1991-01-01. Missing data from 2012-06-01,2015-02-01. Eliminating 2012 on to have continous dataset
-HorsetoothInterpolation <- HorsetoothInterpolation %>%
-  filter(Date >= "1991-01-01", Date <= "2012-06-01")
+#Also has an outlier in the late 1990s, but it looks like there are multiple months of very high discharge
+#So I'm not going to get rid of the outlier 
+
+HorsetoothInterpolation <- full_join(HorsetoothReleases,SWSI_CO, by = "Date") %>%#Combining SWSI by basin with diversion data
+  filter(Date <= "2012-06-01", Date >= "1991-01-01") %>% 
+  select(Date,Discharge) %>% arrange(Date)
 
 
+HorsetoothInterpolation$DischargeTRIM = (na.trim(HorsetoothInterpolation$Discharge, "both"))
+
+
+sum(is.na(HorsetoothInterpolation$Discharge))
+#14 nas 
+
+plot(read.zoo(HorsetoothInterpolation, index.column=1, format="%Y-%m-%d")) #plot as time series
 ## fill gaps with spline interpolation ##
 par(mfrow=c(2,1)) # set up plotting window to comapare ts before and after gap filling
 
@@ -92,8 +109,6 @@ sum(is.na(Horsetooth_filled$Discharge))
 
 
 ## Adams ## 
-
-AdamsDiversions <- read_csv(file = "data/processed/AdamsMonthlyDischarge") 
 
 #There are no NAs but when I combined data with SWSI, I found data gaps. 
 #Going to combine SWSI just to create a date column to introduce NAs where diversion data is missing.

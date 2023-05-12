@@ -40,3 +40,4 @@ HeronMonthlyReleases <- HeronMonthly %>% #Select and rename relevant columns
 
 ####Write to CSV#### 
 write_csv(HeronMonthlyReleases,file = "data/processed/HeronMonthlyReleases") #write to csv
+

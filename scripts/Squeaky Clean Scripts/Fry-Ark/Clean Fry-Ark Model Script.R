@@ -326,18 +326,16 @@ summary(mod_ARMAp2)
 visreg(mod_ARMAp2)
 
 Boustead_CO_p2 <- mod_ARMAp2
+cor(CombinedData$Discharge, fitted(Boustead_CO_p2))
 
 
 #Plot result 
-visreg(Boustead_CO_p2, "SWSI_values", gg = T) +
+Boustead_CO_p2_chart <- visreg(Boustead_CO_p2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Boustead Diversions by Colorado SWSI")
 
-
-# saving the plot as png 
-ggsave("BousteadCOp2result.png", path = "results/graphs/")
 
 # bootstrap confidence intervals
 Boustead_CO_p2_boot<-lmeresampler::bootstrap(model = Boustead_CO_p2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -385,17 +383,23 @@ summary(mod_ARMAp2)
 visreg(mod_ARMAp2)
 
 Boustead_Ark_p2 <- mod_ARMAp2
+cor(CombinedData$Discharge, fitted(Boustead_Ark_p2))
+
 
 #Plot result 
-visreg(Boustead_Ark_p2, "SWSI_values", gg = T) +
+Boustead_Ark_p2_chart <- visreg(Boustead_Ark_p2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Boustead Diversions by Arkansas SWSI")
 
+### Plot both basins against eachother. Colorado on bottom ###
+Boustead_Ark_p2_Result <- gridExtra::grid.arrange(Boustead_Ark_p2_chart, Boustead_CO_p2_chart, ncol=1)
+
 
 # saving the plot as png 
-ggsave("BousteadArkp2result.png", path = "results/graphs/")
+ggsave("Boustead_Ark_p2_Result.png", plot = Boustead_Ark_p2_Result, path = "results/graphs/")
+
 
 # bootstrap confidence intervals
 Boustead_Ark_p2_boot<-lmeresampler::bootstrap(model = Boustead_Ark_p2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -405,10 +409,10 @@ Boustead_Ark_p2_CIplot_custom = Boustead_Ark_p2_CIplot + ggtitle("Boustead vs Ar
 plot(Boustead_Ark_p2_CIplot_custom)
 
 #Boustead - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
-gridExtra::grid.arrange(Boustead_Ark_p2_CIplot_custom, Boustead_CO_p2_CIplot_custom, ncol=1)
+Boustead_p2_boot_chart <- gridExtra::grid.arrange(Boustead_Ark_p2_CIplot_custom, Boustead_CO_p2_CIplot_custom, ncol=1)
 
 #save plots
-ggsave("Boustead_p2_boot.png", path = "results/graphs/")
+ggsave("Boustead_p2_boot.png", plot = Boustead_p2_boot_chart, path = "results/graphs/")
 
 
 ####Twin - CO SWSI linear model w seasonal correction on Twin data p = 0.0124 ####
@@ -454,19 +458,16 @@ summary(mod_ARMAp1) #p = 0.0066
 visreg(mod_ARMAp1)
 
 Twin_CO_p1 <- mod_ARMAp1
+cor(CombinedData$Discharge, fitted(Twin_CO_p1))
+
 
 
 #Plot result 
-visreg(Twin_CO_p1, "SWSI_values", gg = T) +
+Twin_CO_p1_chart <- visreg(Twin_CO_p1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Twin Diversions by Colorado SWSI")
-
-
-# saving the plot as png 
-ggsave("TwinCOp1result.png", path = "results/graphs/")
-
 
 # bootstrap confidence intervals
 Twin_CO_p1_boot<-lmeresampler::bootstrap(model = Twin_CO_p1, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -511,17 +512,23 @@ summary(mod_ARMAp1) #p = 0.0247
 visreg(mod_ARMAp1)
 
 Twin_Ark_p1 <- mod_ARMAp1
+cor(CombinedData$Discharge, fitted(Twin_Ark_p1))
+
+
 
 #Plot result 
-visreg(Twin_Ark_p1, "SWSI_values", gg = T) +
+Twin_Ark_p1_chart <- visreg(Twin_Ark_p1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Twin Diversions by Arkansas SWSI")
 
+### Plot both basins against eachother. Colorado on bottom ###
+Twin_p1_chart <- gridExtra::grid.arrange(Twin_Ark_p1_chart, Twin_CO_p1_chart, ncol=1)
+
 
 # saving the plot as png 
-ggsave("TwinArkp1result.png", path = "results/graphs/")
+ggsave("Twin_p1_chart.png", plot = Twin_p1_chart, path = "results/graphs/")
 
 # bootstrap confidence intervals
 Twin_Ark_p1_boot<-lmeresampler::bootstrap(model = Twin_Ark_p1, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -531,5 +538,8 @@ Twin_Ark_p1_CIplot_custom = Twin_Ark_p1_CIplot + ggtitle("Twin vs Arkansas SWSI"
 plot(Twin_Ark_p1_CIplot_custom)
 
 #Twin - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
-gridExtra::grid.arrange(Twin_Ark_p1_CIplot_custom, Twin_CO_p1_CIplot_custom, ncol=1)
+Twinp1result_boot_chart <- gridExtra::grid.arrange(Twin_Ark_p1_CIplot_custom, Twin_CO_p1_CIplot_custom, ncol=1)
+
+# saving the plot as png 
+ggsave("Twinp1result_boot.png", plot = Twinp1result_boot_chart, path = "results/graphs/")
 

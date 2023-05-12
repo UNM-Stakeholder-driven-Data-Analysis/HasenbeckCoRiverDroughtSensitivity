@@ -283,7 +283,7 @@ Discharge_data_DEs = na.trim(Discharge_data_DEs, "both")
 HeronDecomp <- Discharge_data_DEs
 
 
-####Azotea - CO SWSI linear model w seasonal correction on Azotea data - ARIMA model p = 0.0141  ####
+####Azotea - CO SWSI linear model w seasonal correction on Azotea data - ARIMA model  ####
 
 Azotea_Decomp_CO_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_CO, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, CO SWSI
 Azotea_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Azotea_Decomp_CO_SWSI_Raw$Discharge)
@@ -374,16 +374,22 @@ qqnorm(resid(mod_ARMAp0q2, type = "normalized"), main="Discharge adjusted, Raw S
 
 Azotea_CO_ARMAp3 <- mod_ARMAp3
 
+summary(Azotea_CO_ARMAp3)
+
+
+cor(CombinedData$Discharge, fitted(Azotea_CO_ARMAp3), method = "spearman")
+
+
 #Plot result 
-visreg(Azotea_CO_ARMAp3, "SWSI_values", gg = T) +
+Azotea_CO_p3_plot <- visreg(Azotea_CO_ARMAp3, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Outflow Discharge") +
+  ylab("Outflow Discharge") +
   ggtitle("Azotea Diversions by CO SWSI")
 
 
 # saving the plot as png 
-ggsave("Azotea_CO_ARMAp3.png", path = "results/graphs/")
+ggsave("Azotea_CO_ARMAp3.png", plot = Azotea_CO_p3_plot, path = "results/graphs/")
 
 
 # bootstrap confidence intervals
@@ -393,7 +399,7 @@ Azotea_CO_ARMAp3_CIplot = plot(Azotea_CO_ARMAp3_boot, "beta.SWSI_values")
 Azotea_CO_ARMAp3_CIplot_custom = Azotea_CO_ARMAp3_CIplot + ggtitle("Azotea vs Colorado SWSI") + xlab("beta SWSI values")
 plot(Azotea_CO_ARMAp3_CIplot_custom)
 
-####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model p = 0.0342  ####
+####Azotea - RG SWSI linear model w seasonal correction on Azotea data - ARIMA model r = 0.4052106  ####
 
 Azotea_Decomp_RG_SWSI_Raw <- full_join(AzoteaDecomp,SWSI_RG, by = "Date")  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
@@ -426,15 +432,21 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 
 Azotea_RG_p3 <- mod_ARMAp3
+
+summary (Azotea_RG_p3)
+cor(CombinedData$Discharge, fitted(Azotea_RG_p3),method = "spearman")
+
 #Plot result 
 Azotea_RG_p3_plot <- visreg(Azotea_RG_p3, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Dsicharge") +
+  ylab("Discharge") +
   ggtitle("Azotea Diversions by Rio Grande SWSI")
 
-# saving the plot as png 
-ggsave("AzoteaRGp3result.png", plot = Azotea_RG_p3_plot, path = "results/graphs/")
+### Azotea - Plot both basins against eachother. Colorado on bottom ###
+Azoteap3result <- gridExtra::grid.arrange(Azotea_RG_p3_plot, Azotea_CO_p3_plot, ncol=1)
+
+ggsave("Azoteap3result.png", plot = Azoteap3result, path = "results/graphs/")
 
 # bootstrap confidence intervals
 Azotea_RG_ARMAp3_boot<-lmeresampler::bootstrap(model = Azotea_RG_p3, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -443,12 +455,13 @@ Azotea_RG_ARMAp3_CIplot = plot(Azotea_RG_ARMAp3_boot, "beta.SWSI_values")
 Azotea_RG_ARMAp3_CIplot_custom = Azotea_RG_ARMAp3_CIplot + ggtitle("Azotea vs Rio Grande SWSI") + xlab("beta SWSI values")
 plot(Azotea_RG_ARMAp3_CIplot_custom)
 ### Azotea - Plot both basins bootstrap intervals against eachother. Colorado on bottom ###
-gridExtra::grid.arrange(Azotea_RG_ARMAp3_CIplot_custom, Azotea_CO_ARMAp3_CIplot_custom, ncol=1)
+AzoteaARMP3_boot <- gridExtra::grid.arrange(Azotea_RG_ARMAp3_CIplot_custom, Azotea_CO_ARMAp3_CIplot_custom, ncol=1)
 
 # saving the plot as png 
-ggsave("Azotea_ARMAp3_boot.png", path = "results/graphs/")
+ggsave("Azotea_ARMAp3_boot.png", plot = AzoteaARMP3_boot, path = "results/graphs/")
 
-####Heron - RG SWSI linear model w seasonal correction on Heron data p = 0.0035 ####
+
+####Heron - RG SWSI linear model w seasonal correction on Heron data r = 0.2370291  ####
 Heron_Decomp_RG_SWSI_Raw <- full_join(HeronDecomp,SWSI_RG, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
@@ -537,15 +550,19 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 
 Heron_RG_p1q2 <- mod_ARMAp1q2
+
+summary(Heron_RG_p1q2)
+cor(CombinedData$Discharge, fitted(Heron_RG_p1q2), method = "spearman")
+
 #Plot result 
-Heron_RG_p1q2_plot <- visreg(Heron_RG_p1q2, "SWSI_values", gg = T) +
+Heron_RG_p1q2_chart <- visreg(Heron_RG_p1q2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Dsicharge") +
+  ylab("Discharge") +
   ggtitle("Heron Diversions by Rio Grande SWSI")
 
 # saving the plot as png 
-ggsave("Heron_RG_p1q2.png", path = "results/graphs/")
+ggsave("Heron_RG_p1q2.png", plot = Heron_RG_p1q2_chart, path = "results/graphs/")
 
 # bootstrap confidence intervals
 Heron_RG_p1q2_boot<-lmeresampler::bootstrap(model = Heron_RG_p1q2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -555,7 +572,7 @@ Heron_RG_p1q2_CIplot_custom = Heron_RG_p1q2_CIplot + ggtitle("Heron vs Rio Grand
 plot(Heron_RG_p1q2_CIplot_custom)
 
 
-####Heron - CO SWSI linear model w seasonal correction on Heron data p = 0.7147 ####
+####Heron - CO SWSI linear model w seasonal correction on Heron data r = 0.2370291  ####
 Heron_Decomp_CO_SWSI_Raw <- full_join(HeronDecomp,SWSI_CO, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 Heron_Decomp_CO_SWSI_Raw$Discharge = as.numeric(Heron_Decomp_CO_SWSI_Raw$Discharge)
 Heron_Decomp_CO_SWSI_Raw$SWSI_values = as.numeric(Heron_Decomp_CO_SWSI_Raw$SWSI_values)
@@ -587,16 +604,24 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 
 
 Heron_CO_p1q2 <- mod_ARMAp1q2
+
+summary (Heron_CO_p1q2)
+cor(CombinedData$Discharge, fitted(Heron_CO_p1q2), method = "spearman")
+
 #Plot result 
-visreg(Heron_CO_p1q2, "SWSI_values", gg = T) +
+Heron_CO_p1q2_chart <- visreg(Heron_CO_p1q2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
-  ylab("Predicted Outflow Discharge") +
+  ylab("Discharge") +
   ggtitle("Heron Outflows by Colorado SWSI")
+
+### Heron - Plot both basins against eachother. Colorado on bottom ###
+HeronP1q2Result <- gridExtra::grid.arrange(Heron_RG_p1q2_chart, Heron_CO_p1q2_chart, ncol=1)
 
 
 # saving the plot as png 
-ggsave("Heron_CO__p1q2.png", path = "results/graphs/")
+ggsave("HeronP1q2Result.png", plot = HeronP1q2Result, path = "results/graphs/")
+
 
 # bootstrap confidence intervals
 Heron_CO_p1q2_boot<-lmeresampler::bootstrap(model = Heron_CO_p1q2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -606,9 +631,9 @@ Heron_CO_p1q2_CIplot_custom = Heron_CO_p1q2_CIplot + ggtitle("Heron vs Colorado 
 plot(Heron_CO_p1q2_CIplot_custom)
 
 ### Heron - Plot both basins bootstrap intervals against eachother. Colorado on bottom ###
-gridExtra::grid.arrange(Heron_RG_p1q2_CIplot_custom, Heron_CO_p1q2_CIplot_custom, ncol=1)
+Heronp1q2_boot <- gridExtra::grid.arrange(Heron_RG_p1q2_CIplot_custom, Heron_CO_p1q2_CIplot_custom, ncol=1)
 
 # saving the plot as png 
-ggsave("Heron_p1q2_boot.png", path = "results/graphs/")
+ggsave("Heron_p1q2_boot.png",plot = Heronp1q2_boot, path = "results/graphs/")
 
 

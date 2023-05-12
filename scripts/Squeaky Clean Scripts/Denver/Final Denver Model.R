@@ -410,7 +410,7 @@ sum(is.na(Discharge_data_DEs))
 #No NAs. 
 Dillon_Decomp_filled <- Discharge_data_DEs %>% arrange(Date)
 
-#### Roberts - S Platte SWSI using NLME p = 0 ####
+#### Roberts - S Platte SWSI using NLME ####
 Roberts_Decomp_SP_SWSI_Raw <- full_join(RobertsDecomp,SWSI_Platte, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data
 
 #POR for SWSI is different than Roberts. Remove dates where there are no Discharge values. 
@@ -440,29 +440,29 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
        xlab=paste("shapiro test: ", round(shapiro.test(resid(mod_ARMAp1q2, type = "normalized"))$statistic,2))); qqline(resid(mod_ARMAp1q2, type = "normalized"))
 
 #some temporal autocorrelation at lag 15 and 24. Ok to use. 
-summary(mod_ARMAp1q2)
+
 
 Roberts_SP_ARMAp1q2 <- mod_ARMAp1q2
+cor(CombinedData$Discharge, fitted(Roberts_SP_ARMAp1q2))
+
+summary(Roberts_SP_ARMAp1q2)
 
 #Plot result 
-visreg(Roberts_SP_ARMAp1q2, "SWSI_values", gg = T) +
+Roberts_SP_ARMAp1q2_plot <- visreg(Roberts_SP_ARMAp1q2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Roberts Outflows by S Platte SWSI")
-
-# saving the plot as png 
-ggsave("Roberts_SP_ARMAp1q2result.png", path = "results/graphs/")
-
 
 # bootstrap confidence intervals
 Roberts_SP_ARMAp1q2_boot<-lmeresampler::bootstrap(model = Roberts_SP_ARMAp1q2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
 Roberts_SP_ARMAp1q2_CIs = confint(Roberts_SP_ARMAp1q2_boot, type="norm",level = 0.95)
 plot(Roberts_SP_ARMAp1q2_boot, "beta.SWSI_values")
 Roberts_SP_ARMAp1q2_CIplot =  plot(Roberts_SP_ARMAp1q2_boot, "beta.SWSI_values")
+Roberts_SP_ARMAp1q2_CIplot_custom = Roberts_SP_ARMAp1q2_CIplot + ggtitle("Roberts vs S. Platte SWSI") + xlab("beta SWSI values")
 
 
-#### Roberts - CO SWSI linear model w seasonal correction on Roberts data - ARIMA model p = 0.0123   ####
+#### Roberts - CO SWSI linear model w seasonal correction on Roberts data - ARIMA model   ####
 
 Roberts_Decomp_CO_SWSI_Raw <- full_join(RobertsDecomp,SWSI_CO, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data
 
@@ -495,36 +495,42 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 #some temporal autocorrelation at 24. Ok to use. 
 
 Roberts_CO_ARMAp1q2 <- mod_ARMAp1q2
+cor(CombinedData$Discharge, fitted(Roberts_CO_ARMAp1q2))
 
 summary(mod_ARMAp1q2)
 
 #Plot result 
-visreg(Roberts_CO_ARMAp1q2, "SWSI_values", gg = T) +
+Roberts_CO_ARMAp1q2_plot <- visreg(Roberts_CO_ARMAp1q2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Roberts Outflows by Colorado SWSI")
 
 
+### Roberts - Plot both basins against eachother. Colorado on bottom ###
+Roberts_ARMAp1q2_plot <- gridExtra::grid.arrange(Roberts_SP_ARMAp1q2_plot, Roberts_CO_ARMAp1q2_plot, ncol=1)
+
+
 # saving the plot as png 
-ggsave("Roberts_CO_ARMAp1q2result.png", path = "results/graphs/")
+ggsave("Roberts_CO_ARMAp1q2_Result.png", plot = Roberts_ARMAp1q2_plot, path = "results/graphs/")
 
 
 # bootstrap confidence intervals
 Roberts_CO_ARMAp1q2_boot<-lmeresampler::bootstrap(model = Roberts_CO_ARMAp1q2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
 Roberts_CO_ARMAp1q2_CIs = confint(Roberts_CO_ARMAp1q2_boot, type="norm",level = 0.95)
 plot(Roberts_CO_ARMAp1q2_boot, "beta.SWSI_values")
-Roberts_CO_ARMAp1q2_CIplot =  plot(Roberts_SP_ARMAp1q2_boot, "beta.SWSI_values")
+Roberts_CO_ARMAp1q2_CIplot =  plot(Roberts_CO_ARMAp1q2_boot, "beta.SWSI_values")
+Roberts_CO_ARMAp1q2_CIplot_custom = Roberts_CO_ARMAp1q2_CIplot + ggtitle("Roberts vs Colorado SWSI") + xlab("beta SWSI values")
 
 
 #### Roberts joint boot strap plots ###
 #Plot both bootstrap plots for both river basins against eachother. Colorado on bottom.  
-gridExtra::grid.arrange(Roberts_SP_ARMAp1q2_CIplot, Roberts_CO_ARMAp1q2_CIplot, ncol=1)
+Roberts_ARMAp1q2_boot_plot <- gridExtra::grid.arrange(Roberts_SP_ARMAp1q2_CIplot_custom, Roberts_CO_ARMAp1q2_CIplot_custom, ncol=1)
 
 # saving the plot as png 
-ggsave("Roberts_ARMAp1q2_boot.png", path = "results/graphs/")
+ggsave("Roberts_ARMAp1q2_boot.png", plot = Roberts_ARMAp1q2_boot_plot, path = "results/graphs/")
 
-####  Gross - CO SWSI linear model w seasonal correction on Gross data p = 0.0516 ####
+####  Gross - CO SWSI linear model w seasonal correction on Gross data  ####
 Gross_Decomp_CO_SWSI_Raw <- full_join(GrossDecomp,SWSI_CO, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 
@@ -558,26 +564,27 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 
 Gross_CO_ARMAp1q1 <- mod_ARMAp1q1
 summary(mod_ARMAp1q1)
+cor(CombinedData$Discharge, fitted(Gross_CO_ARMAp1q1))
+
 
 #Plot result 
-visreg(Gross_CO_ARMAp1q1, "SWSI_values", gg = T) +
+Gross_CO_ARMAp1q1_plot <- visreg(Gross_CO_ARMAp1q1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Gross Outflows by Colorado SWSI")
 
 
-# saving the plot as png 
-ggsave("Gross_CO_ARMAp1q1_result.png", path = "results/graphs/")
 
 # bootstrap confidence intervals
 Gross_CO_ARMAp1q1_boot<-lmeresampler::bootstrap(model = Roberts_CO_ARMAp1q2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
 Gross_CO_ARMAp1q1_CIs = confint(Gross_CO_ARMAp1q1_boot, type="norm",level = 0.95)
 plot(Gross_CO_ARMAp1q1_boot, "beta.SWSI_values")
 Gross_CO_ARMAp1q1_CIplot = plot(Gross_CO_ARMAp1q1_boot, "beta.SWSI_values")
+Gross_CO_ARMAp1q1_CIplot_custom = Gross_CO_ARMAp1q1_CIplot + ggtitle("Gross vs Colorado SWSI") + xlab("beta SWSI values")
 
 
-####Gross - SP SWSI linear model w seasonal correction on Gross data p = 0.1025 ####
+####Gross - SP SWSI linear model w seasonal correction on Gross data ####
 Gross_Decomp_SP_SWSI_Raw <- full_join(GrossDecomp,SWSI_Platte, by = "Date")  %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is older than for SWSI. Remove dates where there are no SWSI values. 
@@ -612,18 +619,22 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 Gross_SP_ARMAp1q1 <- mod_ARMAp1q1
 summary(Gross_SP_ARMAp1q1)
 
+cor(CombinedData$Discharge, fitted(Gross_SP_ARMAp1q1))
+
 #NO AUTOCORRELATION GREAT MODEL FIT! 
 
 #Plot result 
-visreg(Gross_SP_ARMAp1q1, "SWSI_values", gg = T) +
+Gross_SP_ARMAp1q1_plot <- visreg(Gross_SP_ARMAp1q1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Gross Outflows by South Platte SWSI")
 
+### Plot both basins against eachother. Colorado on bottom ###
+Gross_ARMAp1q1_plot <- gridExtra::grid.arrange(Gross_SP_ARMAp1q1_plot, Gross_CO_ARMAp1q1_plot, ncol=1)
 
 # saving the plot as png 
-ggsave("Gross_SP_ARMAp1q1_result.png", path = "results/graphs/")
+ggsave("Gross_SP_ARMAp1q1_Result.png", plot = Gross_SP_ARMAp1q1_plot, path = "results/graphs/")
 
 
 # bootstrap confidence intervals
@@ -631,15 +642,16 @@ Gross_SP_ARMAp1q1_boot<-lmeresampler::bootstrap(model = Gross_SP_ARMAp1q1, .f = 
 Gross_SP_ARMAp1q1_CIs = confint(Gross_SP_ARMAp1q1_boot, type="norm",level = 0.95)
 plot(Gross_SP_ARMAp1q1_boot, "beta.SWSI_values")
 Gross_SP_ARMAp1q1_CIplot = plot(Gross_SP_ARMAp1q1_boot, "beta.SWSI_values")
+Gross_SP_ARMAp1q1_CIplot_custom = Gross_SP_ARMAp1q1_CIplot + ggtitle("Gross vs S. Platte SWSI") + xlab("beta SWSI values")
 
 
 ### Gross - Plot both basins bootstrap intervals against eachother. Colorado on bottom ###
-gridExtra::grid.arrange(Gross_SP_ARMAp1q1_CIplot, Gross_CO_ARMAp1q1_CIplot, ncol=1)
+Gross_boot_plot <- gridExtra::grid.arrange(Gross_SP_ARMAp1q1_CIplot_custom, Gross_CO_ARMAp1q1_CIplot_custom, ncol=1)
 
 # saving the plot as png 
-ggsave("Gross_ARMAp1q1_boot.png", path = "results/graphs/")
+ggsave("Gross_ARMAp1q1_boot.png", plot = Gross_boot_plot, path = "results/graphs/")
 
-####Dillon - CO SWSI linear model w seasonal correction on Dillon data p =  0.1137 ####
+####Dillon - CO SWSI linear model w seasonal correction on Dillon data ####
 Dillon_Decomp_CO_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_CO, by = "Date") %>% arrange(Date)  #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
@@ -721,28 +733,26 @@ qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 Dillon_CO_ARMAp3 <- mod_AMRAp3
 
 summary(Dillon_CO_ARMAp3)
+cor(CombinedData$Discharge, fitted(Dillon_CO_ARMAp3))
 
 
 #Plot result 
-visreg(Dillon_CO_ARMAp3, "SWSI_values", gg = T) +
+Dillon_CO_ARMAp3_plot <- visreg(Dillon_CO_ARMAp3, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Dillon Outflows by Colorado SWSI")
-
-
-# saving the plot as png 
-ggsave("Dillon_CO_ARMAp3result.png", path = "results/graphs/")
 
 # bootstrap confidence intervals
 Dillon_CO_ARMAp3_boot<-lmeresampler::bootstrap(model = Dillon_CO_ARMAp3, .f = fixef, type = "reb", B = 1000, reb_type = 2)
 Dillon_CO_ARMAp3_CIs = confint(Dillon_CO_ARMAp3_boot, type="norm",level = 0.95)
 plot(Dillon_CO_ARMAp3_boot, "beta.SWSI_values")
 Dillon_CO_ARMAp3_CIplot = plot(Dillon_CO_ARMAp3_boot, "beta.SWSI_values")
+Dillon_CO_ARMAp3_CIplot_custom = Dillon_CO_ARMAp3_CIplot + ggtitle("Dillon vs Colorado SWSI") + xlab("beta SWSI values")
 
 
 
-####Dillon - SP SWSI linear model w seasonal correction on Dillon data p = 0.0493 ####
+####Dillon - SP SWSI linear model w seasonal correction on Dillon data  ####
 Dillon_Decomp_SP_SWSI_Raw <- full_join(Dillon_Decomp_filled,SWSI_Platte, by = "Date") %>% arrange(Date) #Combining SWSI by basin with diversion data, Azotea Tunnel, RG SWSI
 
 #POR for discharge data is different than for SWSI. Remove dates where there are no SWSI values. 
@@ -771,27 +781,34 @@ qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 Dillon_SP_ARMAp3 <- mod_AMRAp3
 
 summary(Dillon_SP_ARMAp3)
+cor(CombinedData$Discharge, fitted(Dillon_SP_ARMAp3))
+
 
 #Plot result 
-visreg(Dillon_SP_ARMAp3, "SWSI_values", gg = T) +
+Dillon_SP_ARMAp3_plot <- visreg(Dillon_SP_ARMAp3, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Outflow Discharge") +
   ggtitle("Dillon Outflows by S Platte SWSI")
 
 
+### Plot both basins against eachother. Colorado on bottom ###
+Dillon_ARMAp3_Result <- gridExtra::grid.arrange(Dillon_SP_ARMAp3_plot, Dillon_CO_ARMAp3_plot, ncol=1)
+
+
 # saving the plot as png 
-ggsave("Dillon_SP_ARMAp3result.png", path = "results/graphs/")
+ggsave("Dillon_ARMAp3_Result.png", plot = Dillon_ARMAp3_Result, path = "results/graphs/")
 
 # bootstrap confidence intervals
 Dillon_SP_ARMAp3_boot<-lmeresampler::bootstrap(model = Dillon_SP_ARMAp3, .f = fixef, type = "reb", B = 1000, reb_type = 2)
 Dillon_SP_ARMAp3_CIs = confint(Dillon_SP_ARMAp3_boot, type="norm",level = 0.95)
 plot(Dillon_SP_ARMAp3_boot, "beta.SWSI_values")
 Dillon_SP_ARMAp3_CIplot = plot(Dillon_SP_ARMAp3_boot, "beta.SWSI_values")
+Dillon_SP_ARMAp3_CIplot_custom = Dillon_SP_ARMAp3_CIplot + ggtitle("Dillon vs S. Platte SWSI") + xlab("beta SWSI values")
 
 
 #Dillon - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
-gridExtra::grid.arrange(Dillon_SP_ARMAp3_CIplot, Dillon_CO_ARMAp3_CIplot, ncol=1)
+DillonBoot <- gridExtra::grid.arrange(Dillon_SP_ARMAp3_CIplot_custom, Dillon_CO_ARMAp3_CIplot_custom, ncol=1)
 
 #save plots
-ggsave("Dillon_ARMAp3_boot.png", path = "results/graphs/")
+ggsave("Dillon_ARMAp3_boot.png", plot = DillonBoot, path = "results/graphs/")

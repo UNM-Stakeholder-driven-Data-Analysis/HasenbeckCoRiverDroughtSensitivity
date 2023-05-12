@@ -371,17 +371,18 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 
 Adams_CO_AR1<- mod_AR1
 
+cor(CombinedData$Discharge, fitted(Adams_CO_AR1))
+
+
 
 #Plot result 
-visreg(Adams_CO_AR1, "SWSI_values", gg = T) +
+Adams_CO_AR1_chart <- visreg(Adams_CO_AR1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Adams Diversions by Colorado SWSI")
 
 
-# saving the plot as png 
-ggsave("AdamsCOAR1result.png", path = "results/graphs/")
 
 
 # bootstrap confidence intervals
@@ -425,17 +426,20 @@ qqnorm(resid(mod_AR1, type = "normalized"), main="Discharge adjusted, Raw SWSI G
 
 Adams_SP_AR1<- mod_AR1
 
+cor(CombinedData$Discharge, fitted(Adams_SP_AR1))
 
 #Plot result 
-visreg(Adams_SP_AR1, "SWSI_values", gg = T) +
+Adams_SP_AR1_chart <- visreg(Adams_SP_AR1, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Adams Diversions by South Platte SWSI")
 
+### Plot both basins against eachother. Colorado on bottom ###
+Adams_AR1_Result <- gridExtra::grid.arrange(Adams_SP_AR1_chart, Adams_CO_AR1_chart, ncol=1)
 
 # saving the plot as png 
-ggsave("AdamsCOAR1result.png", path = "results/graphs/")
+ggsave("Adams_AR1_Result.png", plot = Adams_AR1_Result, path = "results/graphs/")
 
 
 # bootstrap confidence intervals
@@ -445,9 +449,11 @@ Adams_SP_AR1_CIplot = plot(Adams_SP_AR1_boot, "beta.SWSI_values")
 Adams_SP_AR1_CIplot_custom = Adams_SP_AR1_CIplot + ggtitle("Adams vs S. Plate SWSI") + xlab("beta SWSI values")
 plot(Adams_SP_AR1_CIplot_custom)
 
-#Twin - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
-gridExtra::grid.arrange(Adams_SP_AR1_CIplot_custom, Adams_CO_AR1_CIplot_custom, ncol=1)
+#Adams - Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
+Adams_both <- gridExtra::grid.arrange(Adams_SP_AR1_CIplot_custom, Adams_CO_AR1_CIplot_custom, ncol=1)
 
+# saving the plot as png 
+ggsave("AdamsAR1result_boot.png", plot = Adams_both, path = "results/graphs/")
 
 
 ####Horsetooth - CO SWSI linear model w seasonal correction on HT data p = 0.6475 ####
@@ -526,17 +532,17 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 Horsetooth_CO_ARMAp2<- mod_ARMAp2
 
+cor(CombinedData$Discharge, fitted(Horsetooth_CO_ARMAp2))
+
 
 #Plot result 
-visreg(Horsetooth_CO_ARMAp2, "SWSI_values", gg = T) +
+Horsetooth_CO_ARMAp2chart <- visreg(Horsetooth_CO_ARMAp2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Horsetooth Diversions by Colorado SWSI")
 
 
-# saving the plot as png 
-ggsave("HorsetoothCO_ARMAp2result.png", path = "results/graphs/")
 
 # bootstrap confidence intervals
 Horsetooth_CO_ARMAp2_boot<-lmeresampler::bootstrap(model = Horsetooth_CO_ARMAp2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -576,18 +582,22 @@ qqnorm(resid(mod_ARMAp2, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 Horsetooth_SP_ARMAp2<- mod_ARMAp2
 
+cor(CombinedData$Discharge, fitted(Horsetooth_SP_ARMAp2))
+
 
 #Plot result 
-visreg(Horsetooth_SP_ARMAp2, "SWSI_values", gg = T) +
+Horsetooth_SP_ARMAp2_chart <- visreg(Horsetooth_SP_ARMAp2, "SWSI_values", gg = T) +
   theme(axis.line = element_line(colour = "black")) +
   xlab("SWSI Values") +
   ylab("Predicted Discharge") +
   ggtitle("Horsetooth Diversions by South Platte SWSI")
 
+### Plot both basins against eachother. Colorado on bottom ###
+Horsetooth_ARMAp2_chart <- gridExtra::grid.arrange(Horsetooth_SP_ARMAp2_chart, Horsetooth_CO_ARMAp2chart, ncol=1)
+
 
 # saving the plot as png 
-ggsave("HorsetoothSP_ARMAp2result.png", path = "results/graphs/")
-
+ggsave("Horsetooth_ARMAp2_result.png", plot = Horsetooth_ARMAp2_chart, path = "results/graphs/")
 
 # bootstrap confidence intervals
 Horsetooth_SP_ARMAp2_boot<-lmeresampler::bootstrap(model = Horsetooth_SP_ARMAp2, .f = fixef, type = "reb", B = 1000, reb_type = 2)
@@ -597,6 +607,8 @@ Horsetooth_SP_ARMAp2_CIplot_custom = Horsetooth_SP_ARMAp2_CIplot + ggtitle("Hors
 plot(Horsetooth_SP_ARMAp2_CIplot_custom)
 
 # Plot both bootstrap plots for both river basins against eachother. Colorado on bottom. 
-gridExtra::grid.arrange(Horsetooth_SP_ARMAp2_CIplot_custom, Horsetooth_CO_ARMAp2_CIplot_custom, ncol=1)
+HorsetoothBoth <- gridExtra::grid.arrange(Horsetooth_SP_ARMAp2_CIplot_custom, Horsetooth_CO_ARMAp2_CIplot_custom, ncol=1)
 
+# saving the plot as png 
+ggsave("HorsetoothARMAp2result_boot.png", plot = HorsetoothBoth, path = "results/graphs/")
 

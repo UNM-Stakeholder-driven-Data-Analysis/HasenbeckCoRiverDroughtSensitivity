@@ -1,6 +1,6 @@
 #### read me ####
 
-# This script models Denver data via linear regression
+# This script preps data then models Denver data via linear regression
 
 #### libraries ####
 

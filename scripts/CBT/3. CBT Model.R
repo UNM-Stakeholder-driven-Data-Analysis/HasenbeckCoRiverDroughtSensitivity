@@ -1,6 +1,6 @@
 #### read me ####
 
-# This script models CBT data via linear regression
+# This script preps data for modeling and then models CBT data via linear regression
 
 #### libraries ####
 

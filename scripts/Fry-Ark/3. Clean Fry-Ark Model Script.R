@@ -1,6 +1,6 @@
 #### read me ####
 
-# This script prepares data for linear modeling, creates a few model structures, and plots the best fitting structures based on evaluations in SJC linearmodelautocorrelation script.   
+# This script prepares data for linear modeling, then models the data. 
 
 #### libraries ####
 

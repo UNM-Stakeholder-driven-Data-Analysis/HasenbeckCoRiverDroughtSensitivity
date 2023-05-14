@@ -1,4 +1,3 @@
-# HasenbeckCoRiverDroughtSensitivity
 # This project considers the impact of drought on transbasin diversions in Colorado, using a drought index (SWSI), 
 # diversion data and reservoir outflows to understand correlation between drought and diversions and deliveries of transbasin-diverted water.
 # 
@@ -6,7 +5,6 @@
 # 
 # Scripts are numbered in order they should be ran. 
 # First, run the SWSI data cleaning script. 
-# Then enter project files to see scripts for specific transbasin projects.
+# Then enter project files to see scripts for specific transbasin projects. 
 # Second, run data cleaning scripts in project files. 
 # Finally, run the model script in the project file to generate results. 
-

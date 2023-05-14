@@ -15,7 +15,7 @@ library(lmeresampler)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-#library(beepr)
+library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
@@ -46,6 +46,11 @@ GrossReleases <- read_csv(file = "data/processed/GrossLakesMonthlyReleases") %>%
 
 #Roberts Tunnel Diversions 
 RobertsDiversions <- read_csv(file = "data/processed/RobertsMonthlyDischarge") %>% arrange(Date)
+
+
+hist(RobertsDiversions$Discharge, breaks = 100)
+hist(GrossReleases$Discharge, breaks = 100)
+hist(DillonReleases$Discharge, breaks = 100)
 
 #### CO SWSI Prep for modeling ####
 
@@ -443,7 +448,7 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 
 
 Roberts_SP_ARMAp1q2 <- mod_ARMAp1q2
-cor(CombinedData$Discharge, fitted(Roberts_SP_ARMAp1q2))
+cor(CombinedData$Discharge, fitted(Roberts_SP_ARMAp1q2), method = "kendall")
 
 summary(Roberts_SP_ARMAp1q2)
 
@@ -495,8 +500,8 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 #some temporal autocorrelation at 24. Ok to use. 
 
 Roberts_CO_ARMAp1q2 <- mod_ARMAp1q2
-cor(CombinedData$Discharge, fitted(Roberts_CO_ARMAp1q2))
-
+cor(CombinedData$Discharge, fitted(Roberts_CO_ARMAp1q2), method = "kendall")
+?cor
 summary(mod_ARMAp1q2)
 
 #Plot result 
@@ -564,7 +569,7 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 
 Gross_CO_ARMAp1q1 <- mod_ARMAp1q1
 summary(mod_ARMAp1q1)
-cor(CombinedData$Discharge, fitted(Gross_CO_ARMAp1q1))
+cor(CombinedData$Discharge, fitted(Gross_CO_ARMAp1q1), method = "kendall")
 
 
 #Plot result 
@@ -619,7 +624,7 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 Gross_SP_ARMAp1q1 <- mod_ARMAp1q1
 summary(Gross_SP_ARMAp1q1)
 
-cor(CombinedData$Discharge, fitted(Gross_SP_ARMAp1q1))
+cor(CombinedData$Discharge, fitted(Gross_SP_ARMAp1q1), method = "kendall")
 
 #NO AUTOCORRELATION GREAT MODEL FIT! 
 
@@ -634,7 +639,7 @@ Gross_SP_ARMAp1q1_plot <- visreg(Gross_SP_ARMAp1q1, "SWSI_values", gg = T) +
 Gross_ARMAp1q1_plot <- gridExtra::grid.arrange(Gross_SP_ARMAp1q1_plot, Gross_CO_ARMAp1q1_plot, ncol=1)
 
 # saving the plot as png 
-ggsave("Gross_SP_ARMAp1q1_Result.png", plot = Gross_SP_ARMAp1q1_plot, path = "results/graphs/")
+ggsave("Gross_ARMAp1q1_Result.png", plot = Gross_ARMAp1q1_plot, path = "results/graphs/")
 
 
 # bootstrap confidence intervals
@@ -733,7 +738,7 @@ qqnorm(resid(mod_AMRAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 Dillon_CO_ARMAp3 <- mod_AMRAp3
 
 summary(Dillon_CO_ARMAp3)
-cor(CombinedData$Discharge, fitted(Dillon_CO_ARMAp3))
+cor(CombinedData$Discharge, fitted(Dillon_CO_ARMAp3), method = "kendall")
 
 
 #Plot result 
@@ -781,7 +786,7 @@ qqnorm(resid(mod_AMRAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 Dillon_SP_ARMAp3 <- mod_AMRAp3
 
 summary(Dillon_SP_ARMAp3)
-cor(CombinedData$Discharge, fitted(Dillon_SP_ARMAp3))
+cor(CombinedData$Discharge, fitted(Dillon_SP_ARMAp3), method = "kendall")
 
 
 #Plot result 
@@ -812,3 +817,5 @@ DillonBoot <- gridExtra::grid.arrange(Dillon_SP_ARMAp3_CIplot_custom, Dillon_CO_
 
 #save plots
 ggsave("Dillon_ARMAp3_boot.png", plot = DillonBoot, path = "results/graphs/")
+
+beep(sound = 5)

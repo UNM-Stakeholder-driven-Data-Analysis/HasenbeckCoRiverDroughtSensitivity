@@ -15,7 +15,7 @@ library(visreg)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-#library(beepr)
+library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
@@ -38,6 +38,8 @@ HeronReleases <- read_csv(file = "data/processed/HeronMonthlyReleases") %>%
   arrange(Date)
 
 HeronReleases$Date = as.Date(HeronReleases$Date, "%y-%m-%d")
+
+hist(HeronReleases$Discharge, breaks = 100)
 
 #### CO SWSI Prep for modeling ####
 SWSI_CO <- SWSI %>%
@@ -377,7 +379,8 @@ Azotea_CO_ARMAp3 <- mod_ARMAp3
 summary(Azotea_CO_ARMAp3)
 
 
-cor(CombinedData$Discharge, fitted(Azotea_CO_ARMAp3), method = "spearman")
+cor(CombinedData$Discharge, fitted(Azotea_CO_ARMAp3), method = "kendall")
+?cor
 
 
 #Plot result 
@@ -434,7 +437,7 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 Azotea_RG_p3 <- mod_ARMAp3
 
 summary (Azotea_RG_p3)
-cor(CombinedData$Discharge, fitted(Azotea_RG_p3),method = "spearman")
+cor(CombinedData$Discharge, fitted(Azotea_RG_p3),method = "kendall")
 
 #Plot result 
 Azotea_RG_p3_plot <- visreg(Azotea_RG_p3, "SWSI_values", gg = T) +
@@ -552,7 +555,7 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 Heron_RG_p1q2 <- mod_ARMAp1q2
 
 summary(Heron_RG_p1q2)
-cor(CombinedData$Discharge, fitted(Heron_RG_p1q2), method = "spearman")
+cor(CombinedData$Discharge, fitted(Heron_RG_p1q2), method = "kendall")
 
 #Plot result 
 Heron_RG_p1q2_chart <- visreg(Heron_RG_p1q2, "SWSI_values", gg = T) +
@@ -606,7 +609,7 @@ qqnorm(resid(mod_ARMAp1q2, type = "normalized"), main="Discharge adjusted, Raw S
 Heron_CO_p1q2 <- mod_ARMAp1q2
 
 summary (Heron_CO_p1q2)
-cor(CombinedData$Discharge, fitted(Heron_CO_p1q2), method = "spearman")
+cor(CombinedData$Discharge, fitted(Heron_CO_p1q2), method = "kendall")
 
 #Plot result 
 Heron_CO_p1q2_chart <- visreg(Heron_CO_p1q2, "SWSI_values", gg = T) +
@@ -637,3 +640,4 @@ Heronp1q2_boot <- gridExtra::grid.arrange(Heron_RG_p1q2_CIplot_custom, Heron_CO_
 ggsave("Heron_p1q2_boot.png",plot = Heronp1q2_boot, path = "results/graphs/")
 
 
+beep(sound = 5)

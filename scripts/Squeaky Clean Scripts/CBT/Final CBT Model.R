@@ -15,7 +15,7 @@ library(visreg)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-#library(beepr)
+library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
@@ -39,6 +39,7 @@ HorsetoothReleases <- read_csv(file = "data/processed/HorsetoothLakesMonthlyRele
   rename("Discharge" = "Release") %>% arrange(Date) #using the same column name as in diversion data to simplify replication
 HorsetoothReleases$Discharge = as.numeric(HorsetoothReleases$Discharge)
 HorsetoothReleases$Date = as.Date(HorsetoothReleases$Date)
+hist(HorsetoothReleases$Discharge, breaks = 100)
 
 #AdamsDiversions# 
 AdamsDiversions <- read_csv(file = "data/processed/AdamsMonthlyDischarge") %>% arrange(Date)
@@ -371,7 +372,7 @@ qqnorm(resid(mod_ARMAp1q1, type = "normalized"), main="Discharge adjusted, Raw S
 
 Adams_CO_AR1<- mod_AR1
 
-cor(CombinedData$Discharge, fitted(Adams_CO_AR1))
+cor(CombinedData$Discharge, fitted(Adams_CO_AR1), method = "kendall")
 
 
 
@@ -426,7 +427,7 @@ qqnorm(resid(mod_AR1, type = "normalized"), main="Discharge adjusted, Raw SWSI G
 
 Adams_SP_AR1<- mod_AR1
 
-cor(CombinedData$Discharge, fitted(Adams_SP_AR1))
+cor(CombinedData$Discharge, fitted(Adams_SP_AR1), method = "kendall")
 
 #Plot result 
 Adams_SP_AR1_chart <- visreg(Adams_SP_AR1, "SWSI_values", gg = T) +
@@ -532,7 +533,7 @@ qqnorm(resid(mod_ARMAp3, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 Horsetooth_CO_ARMAp2<- mod_ARMAp2
 
-cor(CombinedData$Discharge, fitted(Horsetooth_CO_ARMAp2))
+cor(CombinedData$Discharge, fitted(Horsetooth_CO_ARMAp2), method = "kendall")
 
 
 #Plot result 
@@ -582,7 +583,7 @@ qqnorm(resid(mod_ARMAp2, type = "normalized"), main="Discharge adjusted, Raw SWS
 
 Horsetooth_SP_ARMAp2<- mod_ARMAp2
 
-cor(CombinedData$Discharge, fitted(Horsetooth_SP_ARMAp2))
+cor(CombinedData$Discharge, fitted(Horsetooth_SP_ARMAp2), method = "kendall")
 
 
 #Plot result 
@@ -612,3 +613,4 @@ HorsetoothBoth <- gridExtra::grid.arrange(Horsetooth_SP_ARMAp2_CIplot_custom, Ho
 # saving the plot as png 
 ggsave("HorsetoothARMAp2result_boot.png", plot = HorsetoothBoth, path = "results/graphs/")
 
+beep(sound = 5)

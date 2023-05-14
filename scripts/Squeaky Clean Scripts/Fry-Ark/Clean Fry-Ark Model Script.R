@@ -15,7 +15,7 @@ library(visreg)
 
 #These libraries didn't get used but may be helpful/are holdovers from past code. 
 #library(car)
-#library(beepr)
+library(beepr)
 #library(gridExtra)
 #library(MARSS)
 
@@ -35,6 +35,8 @@ TwinReleases <- read_csv(file = "data/processed/TwinLakesMonthlyReleases") %>%
 ## Boustead ## 
 BousteadDiversions <- read_csv(file = "data/processed/BousteadMonthlyDiversions")  %>% 
   arrange(Date)
+
+hist(TwinReleases$Discharge, breaks = 100)
 
 #### CO SWSI Prep for modeling ####
 #Pulling out Colorado SWSI. Will use this to create date column to interpolate diversions/outflows
@@ -326,7 +328,7 @@ summary(mod_ARMAp2)
 visreg(mod_ARMAp2)
 
 Boustead_CO_p2 <- mod_ARMAp2
-cor(CombinedData$Discharge, fitted(Boustead_CO_p2))
+cor(CombinedData$Discharge, fitted(Boustead_CO_p2), method = "kendall")
 
 
 #Plot result 
@@ -383,7 +385,7 @@ summary(mod_ARMAp2)
 visreg(mod_ARMAp2)
 
 Boustead_Ark_p2 <- mod_ARMAp2
-cor(CombinedData$Discharge, fitted(Boustead_Ark_p2))
+cor(CombinedData$Discharge, fitted(Boustead_Ark_p2), method = "kendall")
 
 
 #Plot result 
@@ -458,7 +460,7 @@ summary(mod_ARMAp1) #p = 0.0066
 visreg(mod_ARMAp1)
 
 Twin_CO_p1 <- mod_ARMAp1
-cor(CombinedData$Discharge, fitted(Twin_CO_p1))
+cor(CombinedData$Discharge, fitted(Twin_CO_p1), method = "kendall")
 
 
 
@@ -512,7 +514,7 @@ summary(mod_ARMAp1) #p = 0.0247
 visreg(mod_ARMAp1)
 
 Twin_Ark_p1 <- mod_ARMAp1
-cor(CombinedData$Discharge, fitted(Twin_Ark_p1))
+cor(CombinedData$Discharge, fitted(Twin_Ark_p1), method = "kendall")
 
 
 
@@ -543,3 +545,4 @@ Twinp1result_boot_chart <- gridExtra::grid.arrange(Twin_Ark_p1_CIplot_custom, Tw
 # saving the plot as png 
 ggsave("Twinp1result_boot.png", plot = Twinp1result_boot_chart, path = "results/graphs/")
 
+beep(sound = 5)
